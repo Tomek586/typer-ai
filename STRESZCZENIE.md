@@ -21,7 +21,7 @@ Budujemy **chatbota po polsku, który analizuje mecze Ekstraklasy i proponuje ty
 ## Jak powstaje typ
 
 1. **Model** liczy prawdopodobieństwo `p` dla każdego zdarzenia.
-2. Porównujemy je z **kursem STS**: `EV = p · kurs − 1` (oczekiwany zysk).
+2. Porównujemy je z **kursem bukmachera** (bet365, pobierany z SofaScore): `EV = p · kurs − 1` (oczekiwany zysk).
 3. **Reguły:** typ jest kandydatem tylko, gdy `p ≥ 52%`, `EV ≥ 3%` i kurs mieści się w 1,50–2,30. Najwyżej jeden typ na mecz. Pierwsza reguła celuje w trafność > 50%, druga w zysk.
 4. **Etap 1, typ wstępny** (dzień wcześniej lub rano): model korzysta ze składu **przewidywanego z newsów**, a Jev decyduje: wydaj / wstrzymaj / odrzuć.
 5. **Etap 2, potwierdzenie** (ok. 60 min przed meczem): model liczy ponownie na **oficjalnym składzie** i aktualnych kursach, a Jev decyduje: potwierdź / anuluj.
@@ -40,8 +40,10 @@ Newsy pobieramy co 2 godziny z RSS. Jev klasyfikuje każdy artykuł: której dru
 
 - **football-data.co.uk:** wyniki Ekstraklasy od 2012/13 i kursy 1X2 (bez statystyk i innych rynków).
 - **SofaScore (scraping):** statystyki, xG, składy, zawodnicy, sędziowie.
-- **STS (scraping):** kursy, na których podejmujemy decyzje.
-- **Newsy (RSS)** i **regulamin STS** do RAG.
+- **SofaScore** daje też kursy bet365 na wszystkie rynki oprócz kartek; na nich podejmujemy decyzje. Kartki modelujemy, ale bez typów.
+- **Newsy (RSS)** i **regulaminy bukmacherów** do RAG.
+
+Uwaga: STS okazał się niemożliwy do pobierania bez obchodzenia zabezpieczeń strony, dlatego z niego zrezygnowaliśmy.
 
 ## Jak sprawdzimy, czy działa
 
@@ -58,7 +60,7 @@ Newsy pobieramy co 2 godziny z RSS. Jev klasyfikuje każdy artykuł: której dru
 
 | Osoba A: dane, model, typy | Osoba B: NLP, Jev, interfejsy |
 |---|---|
-| scrapery SofaScore, STS, import CSV | pipeline newsów i klasyfikacja Jev |
+| scraper SofaScore (dane i kursy), import CSV | pipeline newsów i klasyfikacja Jev |
 | model statystyczny i kalibracja | silnik decyzyjny: bramka, router, guardrails |
 | reguły typów, dwa etapy, kupony, rozliczanie | chatbot: agent, narzędzia, RAG, prompty |
 | backtest i test na żywo | ocena NLP: newsy, router, chatbot, porównanie LLM |
@@ -68,7 +70,7 @@ Newsy pobieramy co 2 godziny z RSS. Jev klasyfikuje każdy artykuł: której dru
 
 ## Kolejność prac (tygodnie od startu)
 
-1. **Tydzień 1:** repozytorium, baza, **konto Jev**, test scrapowania STS i SofaScore.
+1. **Tydzień 1:** repozytorium, baza, **konto Jev**, test źródeł danych (zrobione: SofaScore działa, STS odpada).
 2. **Tydzień 2–3:** prosty model + reguły + codzienne zapisywanie typów. **Musi ruszyć szybko**, bo od połowy grudnia Ekstraklasa ma przerwę zimową, a potrzebujemy jak najwięcej meczów do testu na żywo.
 3. **Tydzień 3–5:** newsy + Jev, pełny model, bramka Jev.
 4. **Tydzień 4–7:** chatbot, interfejsy, ocena NLP.
@@ -78,7 +80,6 @@ Newsy pobieramy co 2 godziny z RSS. Jev klasyfikuje każdy artykuł: której dru
 
 - czy da się założyć konto Jev (console.typesafe.ai) i jak radzi sobie z polskimi newsami,
 - czy SofaScore ma xG dla starszych sezonów Ekstraklasy,
-- czy da się stabilnie pobierać kursy z STS,
 - czy Bielik jest dostępny przez API.
 
 ## Uczciwie o ryzyku

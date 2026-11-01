@@ -4,25 +4,25 @@
 
 | Źródło | Co daje | Zakres | Rola |
 |---|---|---|---|
-| **football-data.co.uk** (`new/POL.csv`) | wyniki, kursy 1X2 zamknięcia: Pinnacle, Bet365, Betfair, średnia, maksimum | Ekstraklasa od 2012/13 | długa historia do Dixon-Coles / Elo / pi-ratings, backtest ROI 1X2 i podwójnej szansy, CLV względem Pinnacle |
-| **SofaScore** (scraper) | terminarz, wyniki, statystyki (rożne, kartki, strzały, xG), składy, statystyki zawodników, sędziowie, kursy orientacyjne | historia: ostatnie 4 sezony (zakres xG do potwierdzenia); bieżąco | xG-ratings, siła składu, modele NB, rozliczanie typów |
-| **STS** (scraper) | bieżące kursy na wszystkie obsługiwane rynki | od startu projektu | **kursy, na których podejmowane są decyzje** |
+| **football-data.co.uk** (`new/POL.csv`) | wyniki, kursy 1X2 zamknięcia: Pinnacle, Bet365, Betfair, średnia, maksimum | Ekstraklasa od 2012/13 | długa historia do Dixon-Coles / Elo / pi-ratings, backtest ROI 1X2 i podwójnej szansy, CLV względem Pinnacle / Betfair Exchange |
+| **SofaScore** (scraper) | terminarz, wyniki, statystyki (rożne, kartki, strzały, xG), składy i lista nieobecnych, statystyki zawodników, sędziowie | historia: ostatnie 4 sezony (xG od co najmniej 2022/23); bieżąco | xG-ratings, siła składu, modele NB, rozliczanie typów |
+| **SofaScore – kursy** | kursy bet365 (dostawca kursów SofaScore dla Polski): 1X2, podwójna szansa, gole, BTTS, handicap azjatycki, rożne; **brak kartek** | od startu projektu | **kursy, na których podejmowane są decyzje** |
 | **Open-Meteo** | prognoza pogody dla lokalizacji stadionu | 48 h przed meczem | kontekst dla bramki Jev (warunki meczu) |
 | **Newsy** (RSS + strony) | artykuły o drużynach Ekstraklasy | od startu projektu | fakty, przewidywane składy, kontekst, RAG |
-| **Regulaminy STS** (PDF/strona) | zasady rozliczania zakładów | stan bieżący | RAG |
+| **Regulaminy bukmacherów** (PDF/strona) | zasady rozliczania zakładów | stan bieżący | RAG |
 
 ### Kolumny `POL.csv` (zweryfikowane)
 
 ```
 Country, League, Season, Date, Time, Home, Away, HG, AG, Res,
-PSCH, PSCD, PSCA,       # Pinnacle, kursy zamknięcia
+PSCH, PSCD, PSCA,       # Pinnacle, kursy zamknięcia (brak od połowy sezonu 2025/26)
 MaxCH, MaxCD, MaxCA,    # najwyższy kurs na rynku
 AvgCH, AvgCD, AvgCA,    # średni kurs
 BFECH, BFECD, BFECA,    # Betfair Exchange
 B365CH, B365CD, B365CA  # Bet365
 ```
 
-Plik nie zawiera statystyk meczowych ani kursów na gole i handicap. Dlatego backtest ROI dla goli, handicapu, rożnych i kartek nie jest możliwy. Te rynki oceniamy w backteście trafnością i kalibracją, a ROI liczymy w teście na żywo na kursach STS.
+Plik nie zawiera statystyk meczowych ani kursów na gole i handicap. Dlatego backtest ROI dla goli, handicapu, rożnych i kartek nie jest możliwy. Te rynki oceniamy w backteście trafnością i kalibracją, a ROI liczymy w teście na żywo na kursach bet365 z SofaScore.
 
 ### Źródła newsów
 
@@ -39,7 +39,7 @@ Każdy bukmacher to osobny adapter z tym samym interfejsem:
 
 ```python
 class OddsAdapter(Protocol):
-    name: str                                   # "sts", "sofascore"
+    name: str                                   # "sofascore", w przyszłości kolejni bukmacherzy
     def list_events(self, league: str) -> list[BookEvent]: ...
     def get_odds(self, event: BookEvent) -> list[OddsQuote]: ...
 
@@ -59,7 +59,21 @@ Adapter odpowiada za:
 
 Dodanie kolejnego bukmachera (np. Fortuna, Superbet) oznacza napisanie jednej klasy. Reszta systemu wybiera wtedy najlepszy kurs spośród dostępnych.
 
-**Scraping STS:** pobieramy tylko ofertę Ekstraklasy, z opóźnieniem 2–5 s między zapytaniami i z cache. Surowe odpowiedzi zapisujemy w `data/raw/sts/`. Scraping może naruszać regulamin serwisu, dlatego robimy go wyłącznie na potrzeby edukacyjne, z niską częstotliwością, bez publikowania danych. Jeśli STS zablokuje dostęp, planem B są kursy z SofaScore (rozdz. 11).
+**Dlaczego nie STS (test z 1.11.2026):** strona STS przesyła ofertę przez wewnętrzny websocket, w przeglądarce automatycznej nie wyświetla meczów, a działa na niej system ochrony przed botami. Projekt nie obchodzi takich zabezpieczeń, więc z STS zrezygnowaliśmy.
+
+**Kursy z SofaScore:** dla Polski SofaScore pokazuje kursy bet365. O ile nam wiadomo, bet365 nie ma polskiej licencji (do sprawdzenia w rejestrze Ministerstwa Finansów). Dla projektu nie ma to znaczenia, bo stawki są wyłącznie wirtualne, a kursy bet365 traktujemy jako **kursy referencyjne rynku**. Interfejs adaptera pozwala później dodać kursy legalnego polskiego bukmachera, jeśli znajdzie się źródło dostępne bez obchodzenia zabezpieczeń.
+
+### Wyniki testu źródeł (1.11.2026)
+
+| Sprawdzenie | Wynik |
+|---|---|
+| SofaScore przez zwykłe zapytania HTTP | ❌ kod 403, potrzebna przeglądarka (Playwright), zapytania wysyłane z wnętrza strony |
+| SofaScore: sezony Ekstraklasy | ✅ ID turnieju 202; sezony od 2019/20 i wcześniejsze |
+| SofaScore: statystyki meczu | ✅ xG, rożne, kartki, strzały; **xG dostępne co najmniej od 2022/23** |
+| SofaScore: składy | ✅ składy potwierdzone ok. godzinę przed meczem; **przed meczem dostępna lista nieobecnych** (`missingPlayers`) |
+| SofaScore: kursy | ✅ bet365: 1X2, podwójna szansa, połowa, DNB, BTTS, gole (linie 0,5–6,5), handicap azjatycki, rożne; ❌ kartki |
+| football-data: Pinnacle | ⚠️ brak od połowy 2025/26; Betfair Exchange dostępny w ok. 700 ostatnich meczach |
+| STS | ❌ oferta niedostępna bez obchodzenia zabezpieczeń |
 
 ## 3.3 Kody rynków
 
@@ -74,7 +88,7 @@ Jeden format w całym systemie (model, reguły, kolektory, rozliczanie):
 | Handicap europejski | `EH:{h}:{1\|X\|2}` | `EH:-1:1` | wynik z doliczonym handicapem (3 wyniki) |
 | Handicap azjatycki | `AH:{linia}:{home\|away}` | `AH:-0.75:home` | linie całkowite (zwrot), połówkowe, ćwiartkowe (stawka dzielona) |
 | Rożne | `CRN:{linia}:{over\|under}` | `CRN:9.5:over` | suma rożnych |
-| Kartki | `CRD:{linia}:{over\|under}` | `CRD:4.5:over` | suma żółtych kartek; czerwona = 2 (zgodnie z regulaminem STS, do weryfikacji) |
+| Kartki | `CRD:{linia}:{over\|under}` | `CRD:4.5:over` | suma żółtych kartek; czerwona = 2 (do weryfikacji w regulaminie bukmachera); **rynek tylko modelowany, bez typów** (brak kursów) |
 
 Rozliczanie każdego kodu to jedna funkcja `settle(market, match_result) -> Outcome`. `Outcome` przyjmuje wartości `WIN`, `HALF_WIN`, `PUSH`, `HALF_LOSS`, `LOSS`. Funkcja ma testy jednostkowe dla wszystkich typów linii.
 
@@ -147,14 +161,14 @@ Każde źródło zapisuje nazwy drużyn i zawodników inaczej, np. „Lech Pozna
 
 Wszystkie kolektory:
 - zapisują surowe odpowiedzi w `data/raw/{źródło}/{data}/`, żeby po zmianie parsera dało się je przetworzyć ponownie bez kolejnego pobierania,
-- mają limit zapytań (1 na 1–2 s dla SofaScore, 1 na 2–5 s dla STS) i ponawianie z wykładniczym odstępem,
+- mają limit zapytań (1 na 1–2 s dla SofaScore) i ponawianie z wykładniczym odstępem,
 - przy błędzie zapisują wpis w `JOB_RUN` i wysyłają alert na Telegram.
 
 ## 3.8 Ryzyka związane z danymi
 
 | Ryzyko | Skutek | Zabezpieczenie |
 |---|---|---|
-| SofaScore lub STS zmieni format albo zablokuje dostęp | brak kursów, składów, statystyk | surowe dane, testy parserów na zapisanych odpowiedziach, adapter zapasowy (kursy SofaScore, API-Football) |
+| SofaScore zmieni format albo zablokuje dostęp | brak kursów, składów, statystyk | surowe dane, testy parserów na zapisanych odpowiedziach, adapter zapasowy (kursy SofaScore, API-Football) |
 | Scraping niezgodny z regulaminem | problem prawny lub etyczny | niska częstotliwość, użytek edukacyjny, brak publikacji danych |
 | Brak xG w starszych sezonach | krótsza historia xG | xG-ratings tylko dla dostępnych sezonów; model działa też bez nich (cecha opcjonalna) |
 | Mało meczów (ok. 306 na sezon) | duża niepewność | proste modele, regularyzacja, przedziały ufności |

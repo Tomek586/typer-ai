@@ -59,7 +59,7 @@ Różnica log-loss i ROI między wariantami pokazuje, ile warta jest informacja 
 - **Czas:** wszystkie kolejki od uruchomienia pipeline'u do oddania projektu, docelowo co najmniej 10 kolejek (ok. 90 meczów). Ekstraklasa ma przerwę zimową (zwykle od połowy grudnia), więc model v1 uruchamiamy jak najwcześniej (rozdz. 11).
 - **Niezmienność:** typy zapisywane są **przed meczem**. Każdego dnia zapisujemy skrót SHA-256 listy decyzji. Zmiana wpisu wsteczna jest wykrywalna.
 - **Strategie równoległe** (rozdz. 7.4): S2-OFICJALNA, S1-WSZYSTKIE, S1-POTWIERDZONE, S-NOGATE.
-- **Wszystkie rynki**, z ROI na kursach STS.
+- **Wszystkie rynki z kursami** (bez kartek), z ROI na kursach bet365 z SofaScore.
 
 ### A.5 Metryki
 
@@ -68,7 +68,7 @@ Różnica log-loss i ROI między wariantami pokazuje, ile warta jest informacja 
 | **Trafność** | `(WIN + 0,5·HALF_WIN) / (liczba typów − PUSH)` | **cel: > 50%** |
 | **ROI** | `Σ zysk / Σ stawek` | **cel: > 0** |
 | Liczba typów, średni kurs | | wiarygodność; kontrola, czy trafność nie wynika z samych niskich kursów |
-| **CLV** | `średnia( kurs_typu / kurs_zamknięcia_bez_marży − 1 )`; zamknięcie: STS (na żywo), Pinnacle (historia) | najlepszy wskaźnik przewagi w małej próbie |
+| **CLV** | `średnia( kurs_typu / kurs_zamknięcia_bez_marży − 1 )`; zamknięcie: ostatni snapshot SofaScore (na żywo), Pinnacle, a od połowy 2025/26 Betfair Exchange (historia) | najlepszy wskaźnik przewagi w małej próbie |
 | Log-loss | `−mean(log p_zdarzenia)` | jakość prawdopodobieństw (główne kryterium modelu) |
 | Brier | `mean((p − y)²)` | j.w. |
 | RPS | ranked probability score dla 1X2 | standard w predykcji piłkarskiej |
@@ -90,7 +90,7 @@ Różnica log-loss i ROI między wariantami pokazuje, ile warta jest informacja 
 | Zawsze faworyt | najniższy kurs 1X2 |
 | Faworyt w przedziale | najniższy kurs, tylko gdy mieści się w `[o_min, o_max]` |
 | Losowy w przedziale | losowe zdarzenie z kursem w `[o_min, o_max]` (średnia z 1000 symulacji) |
-| Rynek jako model | prawdopodobieństwa z kursów zamknięcia Pinnacle bez marży (punkt odniesienia dla log-loss) |
+| Rynek jako model | prawdopodobieństwa z kursów zamknięcia Pinnacle (lub Betfair Exchange, gdy brak Pinnacle) bez marży (punkt odniesienia dla log-loss) |
 | Tylko Elo / tylko Dixon-Coles | pojedyncze komponenty |
 
 ### A.8 Ablacje modelu

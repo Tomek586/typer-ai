@@ -35,7 +35,7 @@ Podział ról wynika z mocnych i słabych stron każdej technologii:
    - Jev przepuszcza, wstrzymuje albo odrzuca kandydatów.
 2. **Etap 2, potwierdzenie** (ok. 60 min przed meczem, po ogłoszeniu składów):
    - model liczy prawdopodobieństwa ponownie, na faktycznych składach,
-   - pobierane są aktualne kursy STS i ponownie sprawdzane reguły,
+   - pobierane są aktualne kursy (bet365 przez SofaScore) i ponownie sprawdzane reguły,
    - Jev ponownie ocenia typ, który zostaje **potwierdzony** albo **anulowany**.
 3. Typy potwierdzone to **oficjalny wynik typera**: są rozliczane i wchodzą do statystyk skuteczności.
 
@@ -45,7 +45,7 @@ Szczegóły opisuje [07-typy-i-decyzje.md](07-typy-i-decyzje.md).
 
 | # | Cel | Miernik |
 |---|---|---|
-| C1 | Model predykcyjny lepszy od prostych strategii i bliski rynkowi | log-loss / Brier niższe niż u baseline'ów; różnica do rynku (Pinnacle) raportowana |
+| C1 | Model predykcyjny lepszy od prostych strategii i bliski rynkowi | log-loss / Brier niższe niż u baseline'ów; różnica do rynku (Pinnacle / Betfair Exchange) raportowana |
 | **C2** | **Trafność typów > 50% i ROI > 0** | typy potwierdzone: backtest sezonu 2025/26 + test na żywo w sezonie 2026/27 |
 | C3 | Typy biją kurs zamknięcia | średnie CLV > 0 |
 | C4 | Newsy poprawnie klasyfikowane | Jev: F1 ≥ 0,8 dla kategorii wydarzeń, ≥ 0,85 dla nieobecności zawodników |
@@ -60,7 +60,8 @@ Szczegóły opisuje [07-typy-i-decyzje.md](07-typy-i-decyzje.md).
 **W zakresie:**
 - liga: **Ekstraklasa**,
 - rynki: **1X2, podwójna szansa, gole (powyżej/poniżej, BTTS), handicap azjatycki i europejski, rożne, kartki**,
-- bukmacher, którego kursy są podstawą decyzji: **STS**. Dodatkowo kursy z SofaScore (orientacyjne) i Pinnacle z football-data.co.uk (punkt odniesienia),
+- kursy, na których podejmowane są decyzje: **bet365, pobierane z SofaScore** (STS odpadł, bo jego oferty nie da się pobierać bez obchodzenia zabezpieczeń strony, rozdz. 3.1). Punkt odniesienia dla historii: Pinnacle i Betfair Exchange z football-data.co.uk,
+- **kartki** są modelowane (prawdopodobieństwa w czacie, ocena kalibracji), ale typer **nie wydaje na nie typów**, bo nie ma dla nich kursów,
 - newsy i wydarzenia: kontuzje, zawieszenia, powroty, zmiana trenera, sytuacja w klubie, terminarz i zmęczenie, motywacja i kontekst, warunki meczu,
 - interfejsy: **Streamlit** (czat + panele) i **bot Telegram**,
 - język: **polski**.
@@ -97,7 +98,7 @@ Rynek bukmacherski jest efektywny, więc przewaga może pochodzić tylko z kilku
 | Moment zawarcia zakładu | dwa etapy: wczesny kurs vs pełna informacja; pomiar CLV | [7](07-typy-i-decyzje.md), [10](10-ewaluacja.md) |
 | Dobra kalibracja | kalibracja per rodzina rynków, mieszanie z rynkiem, wybór modeli po log-loss | [4](04-model-predykcyjny.md) |
 
-Porównywanie kursów u wielu bukmacherów (*line shopping*) to zwykle duże źródło przewagi. W projekcie decyzje opierają się na jednym bukmacherze (STS), więc z tego źródła korzystamy w ograniczonym stopniu. Architektura kolektora kursów pozwala dodać kolejnych bukmacherów jako osobne adaptery (rozdz. 3).
+Porównywanie kursów u wielu bukmacherów (*line shopping*) to zwykle duże źródło przewagi. W projekcie decyzje opierają się na jednym bukmacherze (bet365 przez SofaScore), więc z tego źródła korzystamy w ograniczonym stopniu. Architektura kolektora kursów pozwala dodać kolejnych bukmacherów jako osobne adaptery (rozdz. 3).
 
 ## 1.8 Realistyczne oczekiwania
 

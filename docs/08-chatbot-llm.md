@@ -59,7 +59,7 @@ Każda rozmowa jest logowana: wiadomości, intencja, wywołania narzędzi (nazwa
 | `h2h` | `druzyna_1`, `druzyna_2`, `n=5` | ostatnie bezpośrednie mecze |
 | `sklad` | `mecz_id` | skład przewidywany lub oficjalny, wskaźniki siły składu, nieobecni |
 | `predykcja` | `mecz_id`, `rynki?` | prawdopodobieństwa, top 3 czynniki (`top_contributions`), etap |
-| `kursy` | `mecz_id`, `rynek?` | kursy STS (+ SofaScore), marża, prawdopodobieństwa bez marży, ruch kursu |
+| `kursy` | `mecz_id`, `rynek?` | kursy (bet365 przez SofaScore), marża, prawdopodobieństwa bez marży, ruch kursu |
 | `przelicz_kurs` | `kursy: list[float]`, `metoda=proporcjonalna\|shin` | prawdopodobieństwa, marża |
 | `typy` | `data?`, `status?` | typy wstępne i potwierdzone (format z rozdz. 7.8) |
 | `zbuduj_kupon` | `kurs_docelowy`, `max_zdarzen=3` | kupon, `p_kupon`, `EV_kupon` |
@@ -92,7 +92,7 @@ Każda rozmowa jest logowana: wiadomości, intencja, wywołania narzędzi (nazwa
 | Typ | Źródło | Chunking | Metadane |
 |---|---|---|---|
 | newsy | pipeline z rozdz. 5 | akapity łączone do 300–500 tokenów, zakładka 50 | `team_ids`, `category`, `published_at`, `source`, `url` |
-| regulamin STS | PDF / strona | jeden paragraf lub punkt = jeden chunk | `section`, `title`, `url` |
+| regulaminy bukmacherów | PDF / strona | jeden paragraf lub punkt = jeden chunk | `section`, `title`, `url` |
 | słownik pojęć | [12-slownik.md](12-slownik.md) | jedno hasło = jeden chunk | `term` |
 
 ### Indeksowanie
@@ -169,7 +169,7 @@ Mechanizmy deterministyczne (regex, sprawdzanie pól) działają zawsze. Jev jes
 >
 > **Typer AI:** **Lech Poznań – Legia Warszawa**, niedziela 17:30, etap 1 (skład przewidywany)
 >
-> | Zdarzenie | Model | Kurs STS | Bez marży | EV |
+> | Zdarzenie | Model | Kurs | Bez marży | EV |
 > |---|---|---|---|---|
 > | 1 | 49,7% | 2,20 | 43,6% | +9,3% |
 > | X | 26,2% | 3,50 | 27,4% | −8,3% |

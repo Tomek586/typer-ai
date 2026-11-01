@@ -114,7 +114,7 @@ Dla danego składu `S` (przewidywanego lub oficjalnego):
 
 **Skład przewidywany (etap 1):**
 1. start od składu referencyjnego,
-2. usunięcie zawodników z aktywnymi faktami `status = out` (kontuzja, zawieszenie) z newsów (rozdz. 5) oraz z listy nieobecnych SofaScore, jeśli jest dostępna,
+2. usunięcie zawodników z aktywnymi faktami `status = out` (kontuzja, zawieszenie) z newsów (rozdz. 5) oraz zawodników z listy nieobecnych SofaScore (`missingPlayers`, dostępna przed meczem),
 3. zawodnicy `doubtful` wchodzą do składu z wagą 0,5 (ich wkład liczony w połowie),
 4. w miejsce usuniętego zawodnika wchodzi następny pod względem minut zawodnik **na tej samej pozycji**.
 
@@ -231,7 +231,7 @@ Kurs bukmachera zawiera informacje, których model nie ma, np. nieopublikowane n
 p_final = σ( w · logit(p_cal) + (1 − w) · logit(p_rynek) )
 ```
 
-- `p_rynek` to prawdopodobieństwo z kursów STS po usunięciu marży **metodą Shina** (rozdz. 7.1).
+- `p_rynek` to prawdopodobieństwo z kursów bet365 (SofaScore) po usunięciu marży **metodą Shina** (rozdz. 7.1).
 - `w ∈ [0, 1]` dobieramy per rodzina rynków na walidacji (siatka co 0,05), minimalizując log-loss.
 - `w = 1` oznacza brak mieszania, a `w = 0` ślepe kopiowanie rynku. Typowo optymalne `w` wychodzi poniżej 0,5, a typ powstaje tylko tam, gdzie model **wyraźnie** nie zgadza się z rynkiem.
 - **Ograniczenie backtestu:** dla historii są tylko kursy zamknięcia (`POL.csv`), niedostępne w momencie decyzji. Backtest raportujemy więc w dwóch wariantach: bez mieszania (wynik „czysty”) i z mieszaniem na kursach zamknięcia (górne oszacowanie, wyraźnie oznaczone).

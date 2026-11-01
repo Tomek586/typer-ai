@@ -20,7 +20,7 @@ Typer AI łączy trzy warstwy, z których każda robi to, w czym jest najlepsza:
 
 Typy powstają w dwóch etapach:
 1. **typ wstępny** (dzień wcześniej lub rano), na składzie przewidywanym z newsów,
-2. **potwierdzenie albo anulowanie** ok. 60 min przed meczem, na oficjalnych składach i aktualnych kursach STS.
+2. **potwierdzenie albo anulowanie** ok. 60 min przed meczem, na oficjalnych składach i aktualnych kursach (bet365 przez SofaScore).
 
 Typy potwierdzone to oficjalny wynik typera.
 

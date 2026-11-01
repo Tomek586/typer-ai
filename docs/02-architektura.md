@@ -37,7 +37,6 @@ flowchart TB
         VDB[(ChromaDB)]
         FD[football-data.co.uk]
         SS[SofaScore]
-        STS[STS]
         NEWS[Newsy RSS / strony<br/>regulaminy PDF]
     end
 
@@ -45,7 +44,7 @@ flowchart TB
     AGENT --> RAG --> VDB
     AGENT -->|narzędzia| CORE
     GUARD & ROUTER & GATE & NEWSC --> DE
-    FD & SS & STS --> DB
+    FD & SS --> DB
     NEWS --> NEWSC --> DB
     NEWS --> VDB
     DB --> RAT --> DC --> CAL
@@ -57,7 +56,7 @@ flowchart TB
 
 | Komponent | Moduł | Opis | Rozdział |
 |---|---|---|---|
-| Kolektory danych | `typerai/collectors/` | import i scraping: football-data, SofaScore, STS, newsy | [3](03-dane.md) |
+| Kolektory danych | `typerai/collectors/` | import i scraping: football-data, SofaScore (dane i kursy), newsy | [3](03-dane.md) |
 | Model predykcyjny | `typerai/model/` | ratingi, Dixon-Coles, λ-GLM, NB, kalibracja, rynki | [4](04-model-predykcyjny.md) |
 | Pipeline newsów | `typerai/news/` | zbieranie, deduplikacja, klasyfikacja Jev, fakty, przewidywany skład | [5](05-newsy-i-wydarzenia.md) |
 | Silnik decyzyjny | `typerai/decision/` | wspólny interfejs dla Jev i LLM, definicje pytań, polityki decyzji, log | [6](06-silnik-decyzyjny-jev.md) |
@@ -80,7 +79,7 @@ sequenceDiagram
     participant TG as Telegram
 
     Note over SCH: D-1 18:00 / D 09:00 – ETAP 1
-    SCH->>COL: kursy STS + terminarz
+    SCH->>COL: kursy + terminarz
     SCH->>NEWS: nowe newsy → fakty → przewidywane składy
     SCH->>M: predykcja (przewidywane składy)
     M->>R: prawdopodobieństwa wszystkich rynków
@@ -89,7 +88,7 @@ sequenceDiagram
     DB-->>TG: typy wstępne
 
     Note over SCH: T-60 min (po składach) – ETAP 2
-    SCH->>COL: oficjalne składy + kursy STS
+    SCH->>COL: oficjalne składy + kursy
     SCH->>M: predykcja (faktyczne składy)
     M->>R: reguły na nowych kursach
     R->>J: typ + zmiany od etapu 1
@@ -130,7 +129,7 @@ sequenceDiagram
 |---|---|---|
 | co 2 h (08:00–22:00) | `collect_news` | RSS → nowe artykuły → deduplikacja → klasyfikacja Jev → fakty → indeks RAG |
 | codziennie 06:00 | `collect_fixtures` | terminarz na 10 dni (SofaScore), sędziowie, prognoza pogody dla meczów w ciągu 48 h |
-| co 6 h | `collect_odds` | snapshot kursów STS i SofaScore dla meczów w ciągu 7 dni |
+| co 6 h | `collect_odds` | snapshot kursów (SofaScore / bet365) dla meczów w ciągu 7 dni |
 | D-1 18:00 i D 09:00 | `stage1_picks` | etap 1 dla meczów w ciągu 36 h, które nie mają jeszcze decyzji etapu 1 |
 | co 10 min w dni meczowe | `stage2_watch` | dla meczów, które zaczynają się za 75–45 min: składy → etap 2 |
 | T-5 min | `closing_odds` | ostatni snapshot kursów (do metryki CLV) |
@@ -160,7 +159,6 @@ typer-ai/
 │   │   ├── sofascore.py           # mecze, statystyki, xG, składy, zawodnicy, sędziowie
 │   │   ├── odds/
 │   │   │   ├── base.py            # interfejs OddsAdapter
-│   │   │   ├── sts.py
 │   │   │   └── sofascore_odds.py
 │   │   ├── weather.py             # prognoza pogody (Open-Meteo)
 │   │   └── news_feeds.py
@@ -216,7 +214,7 @@ typer-ai/
 |---|---|---|
 | Język | Python 3.11+ | standard w NLP i ML |
 | Dane | pandas, numpy, SQLite | proste, bez serwera bazy danych |
-| Scraping | Playwright, httpx | SofaScore i STS wymagają przeglądarki lub zapytań do API strony |
+| Scraping | Playwright, httpx | SofaScore blokuje zwykłe zapytania HTTP (403); dane pobieramy z wnętrza przeglądarki |
 | Pogoda | Open-Meteo API | darmowe, bez klucza |
 | Newsy | feedparser, trafilatura | RSS + czysty tekst artykułu |
 | Model | scipy (MLE), statsmodels (GLM Poissona, NB), scikit-learn (kalibracja) | dojrzałe, działają na CPU |

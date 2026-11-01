@@ -34,7 +34,7 @@ Dla handicapu azjatyckiego EV liczymy z rozkładu różnicy goli (rozdz. 4.6.1).
 p_AH = P(wygrana) + P(połowa wygranej) + ½ · P(zwrot)
 ```
 
-**Kurs do decyzji:** zawsze **kurs STS** z ostatniego snapshotu, nie starszego niż 2 h (etap 1) lub 15 min (etap 2). Jeśli STS nie ma danego rynku, typu nie ma. Kursy SofaScore służą tylko do informacji i porównań.
+**Kurs do decyzji:** zawsze **kurs bet365 pobrany z SofaScore** z ostatniego snapshotu, nie starszego niż 2 h (etap 1) lub 15 min (etap 2). Jeśli dla rynku nie ma kursu, typu nie ma. Dotyczy to zawsze **kartek** (`CRD`): model liczy dla nich prawdopodobieństwa, ale typów się nie wydaje. Kursy SofaScore służą tylko do informacji i porównań.
 
 ## 7.3 Reguły wyboru typów
 
@@ -82,13 +82,13 @@ stateDiagram-v2
 
 ### Etap 1: typ wstępny
 - **Kiedy:** D-1 o 18:00 i D o 09:00, dla meczów w ciągu 36 h bez decyzji etapu 1.
-- **Wejście:** predykcja `stage=1` (skład przewidywany z newsów), kursy STS.
+- **Wejście:** predykcja `stage=1` (skład przewidywany z newsów), aktualne kursy.
 - **Wyjście:** status `WSTEPNY`, `WSTRZYMANY` lub `ODRZUCONY`, `odds_stage1`, powiadomienie na Telegram o typach wstępnych.
 - **Znaczenie dla użytkownika:** „model widzi wartość, ale czekamy na składy”. Kto chce, może zawrzeć zakład wcześniej po lepszym kursie, świadomie ponosząc ryzyko składu.
 
 ### Etap 2: potwierdzenie
 - **Kiedy:** ok. 60 min przed meczem, po pobraniu oficjalnych składów (zadanie `stage2_watch` co 10 min sprawdza, czy składy są dostępne; najpóźniej T-30).
-- **Wejście:** predykcja `stage=2` (skład oficjalny), kursy STS z ostatnich 15 min, wynik etapu 1, ruch kursu.
+- **Wejście:** predykcja `stage=2` (skład oficjalny), kursy z ostatnich 15 min, wynik etapu 1, ruch kursu.
 - **Dla typu `WSTEPNY` lub `WSTRZYMANY`:** ponowne sprawdzenie reguł R1–R7 na nowych liczbach, potem bramka Jev. Typ staje się `POTWIERDZONY` albo `ANULOWANY`.
 - **Nowi kandydaci** (np. dopiero skład pokazał wartość): mogą dostać status `POTWIERDZONY_POZNO`, oznaczany osobno w raportach.
 - **Brak składów do T-30:** typ jest anulowany (reguła „brak informacji = brak typu”).
@@ -141,12 +141,12 @@ Po meczu zadanie `settle`:
 | `HALF_LOSS` | −0,5 |
 | `LOSS` | −1 |
 
-4. zapisuje kurs zamknięcia STS (ostatni snapshot przed meczem) do obliczenia CLV,
+4. zapisuje kurs zamknięcia (ostatni snapshot przed meczem) do obliczenia CLV,
 5. aktualizuje ratingi (Elo, pi, xG-form) i statystyki zawodników,
 6. weryfikuje fakty z newsów względem składu (rozdz. 5.5),
 7. wysyła podsumowanie dnia na Telegram.
 
-Mecz przełożony lub przerwany rozliczamy według regulaminu STS (zwykle zwrot, czyli `PUSH`). Wyjątki obsługujemy ręcznie i oznaczamy w bazie.
+Mecz przełożony lub przerwany rozliczamy według typowych zasad bukmacherskich (zwykle zwrot, czyli `PUSH`). Wyjątki obsługujemy ręcznie i oznaczamy w bazie.
 
 ## 7.8 Format typu (dla chatbota i Telegrama)
 
@@ -158,7 +158,7 @@ Mecz przełożony lub przerwany rozliczamy według regulaminu STS (zwykle zwrot,
   "market": "1X2:1",
   "label": "Wygrana Lecha",
   "odds": 2.15,
-  "bookmaker": "STS",
+  "bookmaker": "bet365 (SofaScore)",
   "p_model": 0.531,
   "p_market": 0.447,
   "ev": 0.142,
