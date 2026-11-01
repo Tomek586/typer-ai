@@ -223,3 +223,22 @@ Wszystkie metryki z C.2 i C.3 dla Gemini, Llama (Groq) i Bielika na tych samych 
 3. Wartość informacji: warianty składu (A.3), bramka Jev (B.2).
 4. NLP: newsy (B.1), router (B.3), guardrails (B.4), chatbot (C.2), RAG (C.3), porównanie LLM (C.4), Jev vs LLM (B.5).
 5. Ograniczenia i wnioski.
+
+---
+
+## E. Wyniki: model v1 (walidacja, 1.11.2026)
+
+Model v1 to sam Dixon-Coles na wynikach, walidowany walk-forward (ponowne dopasowanie co tydzień) na rynku 1X2. Odniesienie: kursy zamknięcia Pinnacle bez marży (Shin). Skrypt: `evaluation/validate_v1.py`, raporty w `evaluation/reports/`.
+
+| Sezon | Log-loss rynku | Log-loss modelu (najlepsze ξ) | Najlepsza waga modelu `w` |
+|---|---|---|---|
+| 2024/25 | **1,0204** | 1,0414 (ξ = 0,0005) | 0,00 |
+| 2023/24 | 1,0613 | 1,0627 (ξ = 0,0005) | 0,45 (1,0575) |
+| oba sezony łącznie | 1,0408 | 1,0521 | **0,15** (1,0406) |
+
+**Wnioski:**
+- Model oparty wyłącznie na wynikach **nie jest lepszy od kursów zamknięcia Pinnacle**. Rynek zna te same wyniki i dużo więcej.
+- Zamrożone parametry v1: **ξ = 0,0005**, **w = 0,15**, czyli prawdopodobieństwo to ok. 85% rynek i 15% model (`config.MODEL`).
+- Przewaga v1 pochodzi głównie z **wyboru najlepszego kursu** spośród ok. 20 bukmacherów: typ powstaje, gdy ktoś płaci wyraźnie więcej niż uczciwa cena wynikająca z Pinnacle.
+- Szansa na przewagę samego modelu pojawia się w v2, z informacjami o składach, zmęczeniu i motywacji (rozdz. 4.4–4.5).
+- Symulacje reguł na kursach zamknięcia dały 7–49 typów na sezon, z wynikiem zależnym od wariantu (ROI od −13% do +4%). Przy tak małych próbach to szum, a nie dowód przewagi.

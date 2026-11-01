@@ -180,14 +180,32 @@ CREATE INDEX IF NOT EXISTS ix_fact_team ON news_fact(team_id, valid_until);
 def connect(path: Path | str | None = None) -> sqlite3.Connection:
     path = Path(path or config.DB_PATH)
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
+    # timeout: przy równoległej pracy kolektorów czekamy na zwolnienie blokady zapisu zamiast przerywać
+    conn = sqlite3.connect(path, timeout=60)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")  # odczyty nie blokują zapisu i odwrotnie
     return conn
+
+
+# Kolumny dodane po utworzeniu pierwszych baz: (tabela, kolumna, typ)
+MIGRATIONS = [
+    ("pick", "p_stage2", "REAL"),
+    ("pick", "ev_stage2", "REAL"),
+    ("pick", "bookmaker_stage2", "TEXT"),
+]
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    for table, column, sql_type in MIGRATIONS:
+        existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {sql_type}")
 
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    _migrate(conn)
     from typerai.teams import seed_teams  # import lokalny – teams korzysta z db
 
     seed_teams(conn)

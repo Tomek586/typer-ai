@@ -147,6 +147,24 @@ def parse_season(html: str) -> list[int]:
     return list(seen)
 
 
+def season_team_names(html: str) -> set[str]:
+    """Nazwy drużyn z tytułów linków do meczów: title="Lech Poznań 3-0 Piast Gliwice"."""
+    names = set()
+    for home, away in re.findall(r'title="([^"]+?) \d+-\d+ ([^"]+?)"', html):
+        names.update((home, away))
+    return names
+
+
+def unknown_teams(html: str) -> set[str]:
+    unknown = set()
+    for name in season_team_names(html):
+        try:
+            teams.resolve(name)
+        except KeyError:
+            unknown.add(name)
+    return unknown
+
+
 def _kickoff_utc(text: str) -> str:
     """'9 sierpnia 2026, 17:30' (czas polski) -> ISO w UTC."""
     m = re.search(r"(\d{1,2}) (\w+) (\d{4})(?:, (\d{1,2}):(\d{2}))?", text)
@@ -336,8 +354,12 @@ def collect(seasons: list[str], refresh_season_pages: bool = False, limit: int |
     client = NinetyMin()
     with db.connect() as conn:
         db.init_db(conn)
+        pages = {season: client.season_page(season, refresh=refresh_season_pages) for season in seasons}
+        unknown = set().union(*(unknown_teams(html) for html in pages.values()))
+        if unknown:
+            raise SystemExit(f"Nierozpoznane drużyny – dopisz aliasy w typerai/teams.py: {sorted(unknown)}")
         for season in seasons:
-            ids = parse_season(client.season_page(season, refresh=refresh_season_pages))
+            ids = parse_season(pages[season])
             done = {r["ninetymin_id"] for r in conn.execute("SELECT ninetymin_id FROM match WHERE ninetymin_id IS NOT NULL")}
             todo = [i for i in ids if i not in done][:limit]
             print(f"{season}: relacji {len(ids)}, do pobrania {len(todo)}", flush=True)
@@ -350,8 +372,8 @@ def collect(seasons: list[str], refresh_season_pages: bool = False, limit: int |
                 if not report.players:   # mecz jeszcze nierozegrany
                     continue
                 save_report(conn, report)
+                conn.commit()  # krótkie transakcje – inne procesy mogą w tym czasie pisać do bazy
                 if n % 25 == 0:
-                    conn.commit()
                     print(f"  {n}/{len(todo)} (zapytań: {client.requests})", flush=True)
             conn.commit()
         update_positions(conn)

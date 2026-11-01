@@ -36,6 +36,10 @@ p_AH = P(wygrana) + P(połowa wygranej) + ½ · P(zwrot)
 
 **Kurs do decyzji:** **najlepszy kurs** danego zdarzenia spośród bukmacherów z ostatniego snapshotu The Odds API, nie starszego niż 2 h (etap 1) lub 15 min (etap 2), z odrzuceniem kursów odstających o więcej niż 8% od mediany (rozdz. 3.3.4). Jeśli dla rynku nie ma kursu, typu nie ma. Zapisujemy też bukmachera, u którego kurs był najlepszy.
 
+**Ograniczenie modelu v1:** typujemy tylko rynki bez możliwości zwrotu stawki: 1X2, podwójną szansę, BTTS oraz linie połówkowe goli i handicapu (np. 2.5, −0.5). Dla linii całkowitych i ćwiartkowych mieszanie z rynkiem wymagałoby uwzględnienia zwrotów, co odkładamy na później.
+
+**Mieszanie dla rynków wielowynikowych:** dla 1X2 łączymy całe rozkłady log-liniowo, `p ∝ p_model^w · p_rynek^(1−w)`. Dla rynków dwuwynikowych jest to dokładnie mieszanie w logitach z rozdz. 4.9. Podwójną szansę liczymy z już zmieszanego 1X2.
+
 ## 7.3 Reguły wyboru typów
 
 Kandydat to para (mecz, rynek), która spełnia **wszystkie** reguły:

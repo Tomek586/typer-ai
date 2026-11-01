@@ -50,6 +50,20 @@ Szczegóły: [rozdz. 1.6](docs/01-koncepcja.md#16-definicja-sukcesu-dlaczego-tra
 | 11 | [Plan prac](docs/11-plan-prac.md) | etapy, podział zadań, ryzyka, scenariusz demo |
 | 12 | [Słownik](docs/12-slownik.md) | pojęcia bukmacherskie, statystyczne i NLP |
 
+## Uruchomienie
+
+```bash
+python -m venv .venv
+.venv/Scripts/python -m pip install -e ".[dev]"
+cp .env.example .env          # uzupełnij klucze
+.venv/Scripts/python -m typerai.collectors.football_data      # wyniki i kursy historyczne
+.venv/Scripts/python -m typerai.collectors.ninetymin          # składy z 90minut.pl (ok. 4 h za pierwszym razem)
+.venv/Scripts/python -m typerai.pipeline stage1               # kursy + typy wstępne
+.venv/Scripts/python -m typerai.pipeline picks                # lista typów i wynik
+.venv/Scripts/python -m typerai.scheduler                     # harmonogram: etap 1, etap 2, rozliczenia
+.venv/Scripts/python -m pytest                                # testy
+```
+
 ## Zastrzeżenie
 
 Projekt ma charakter edukacyjny i badawczy. Typer AI nie gwarantuje wygranych i nie zachęca do hazardu. Testy prowadzone są wyłącznie na wirtualnych stawkach. Zakłady bukmacherskie są dozwolone od 18 lat i mogą uzależniać.

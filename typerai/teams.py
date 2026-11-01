@@ -37,7 +37,7 @@ TEAMS: dict[str, tuple[str, list[str]]] = {
     "sandecja": ("Sandecja Nowy Sącz", ["Sandecja Nowy S."]),
     "slask": ("Śląsk Wrocław", ["Śląsk"]),
     "stal-mielec": ("Stal Mielec", []),
-    "termalica": ("Bruk-Bet Termalica Nieciecza", ["Termalica B-B.", "Termalica Nieciecza", "Bruk-Bet Termalica"]),
+    "termalica": ("Bruk-Bet Termalica Nieciecza", ["Termalica B-B.", "Termalica Nieciecza", "Bruk-Bet Termalica", "Termalica Bruk-Bet Nieciecza"]),
     "warta": ("Warta Poznań", []),
     "widzew": ("Widzew Łódź", ["Widzew"]),
     "wieczysta": ("Wieczysta Kraków", []),
