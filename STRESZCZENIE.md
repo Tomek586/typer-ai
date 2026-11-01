@@ -40,7 +40,7 @@ Newsy pobieramy co 2 godziny z RSS. Jev klasyfikuje każdy artykuł: której dru
 
 - **football-data.co.uk:** wyniki Ekstraklasy od 2012/13 i kursy 1X2 (bez statystyk i innych rynków).
 - **The Odds API (darmowy plan):** bieżące kursy ok. 20 bukmacherów (m.in. Pinnacle); bierzemy najlepszy kurs.
-- **90minut.pl:** historyczne składy z minutami, strzelcy, kartki (za zgodą redakcji); z nich liczymy ważność zawodników.
+- **90minut.pl:** historyczne składy z minutami, strzelcy, kartki (redakcja wyraziła zgodę); z nich liczymy ważność zawodników.
 - **Newsy (RSS)** i **regulaminy bukmacherów** do RAG.
 
 Uwaga: SofaScore, STS, Flashscore i strona ligi blokują automaty, a API-Football jest płatne dla bieżącego sezonu, dlatego z nich zrezygnowaliśmy. Projekt kosztuje 0 zł. Brak oficjalnych składów przed meczem nadrabiamy NLP, czyli nieobecnościami wyciąganymi z newsów.
@@ -70,7 +70,7 @@ Uwaga: SofaScore, STS, Flashscore i strona ligi blokują automaty, a API-Footbal
 
 ## Kolejność prac (tygodnie od startu)
 
-1. **Tydzień 1:** repozytorium, baza, **konto Jev**, test źródeł danych (zrobione), mail do 90minut.pl z prośbą o zgodę.
+1. **Tydzień 1:** repozytorium, baza, **konto Jev**, test źródeł danych (zrobione), zgoda 90minut.pl uzyskana.
 2. **Tydzień 2–3:** prosty model + reguły + codzienne zapisywanie typów. **Musi ruszyć szybko**, bo od połowy grudnia Ekstraklasa ma przerwę zimową, a potrzebujemy jak najwięcej meczów do testu na żywo.
 3. **Tydzień 3–5:** newsy + Jev, pełny model, bramka Jev.
 4. **Tydzień 4–7:** chatbot, interfejsy, ocena NLP.
@@ -79,7 +79,6 @@ Uwaga: SofaScore, STS, Flashscore i strona ligi blokują automaty, a API-Footbal
 ## Do sprawdzenia od razu
 
 - czy da się założyć konto Jev (console.typesafe.ai) i jak radzi sobie z polskimi newsami,
-- czy redakcja 90minut.pl zgadza się na pobieranie składów,
 - czy Bielik jest dostępny przez API.
 
 ## Uczciwie o ryzyku

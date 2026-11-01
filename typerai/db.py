@@ -31,44 +31,36 @@ CREATE TABLE IF NOT EXISTS match (
     ag            INTEGER,
     status        TEXT NOT NULL DEFAULT 'scheduled',  -- scheduled | finished | postponed | abandoned
     referee       TEXT,
-    sofascore_id  INTEGER UNIQUE,
+    ninetymin_id  INTEGER UNIQUE,            -- id meczu w 90minut.pl
     UNIQUE (competition, home_id, away_id, kickoff_utc)  -- w formacie 37 kolejek para mogła grać 2x u tego samego gospodarza
 );
 
 CREATE TABLE IF NOT EXISTS match_stats (
     match_id      INTEGER PRIMARY KEY REFERENCES match(id),
-    xg_h REAL, xg_a REAL,
-    corners_h INTEGER, corners_a INTEGER,
     yellow_h INTEGER, yellow_a INTEGER,
-    red_h INTEGER, red_a INTEGER,
-    shots_h INTEGER, shots_a INTEGER
+    red_h INTEGER, red_a INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS player (
-    id            INTEGER PRIMARY KEY,       -- id SofaScore
-    team_id       TEXT REFERENCES team(id),
+    id            INTEGER PRIMARY KEY,       -- id zawodnika w 90minut.pl
+    team_id       TEXT REFERENCES team(id),  -- ostatni klub, w którym wystąpił
     name          TEXT NOT NULL,
     aliases       TEXT NOT NULL DEFAULT '[]',
-    position      TEXT                       -- G | D | M | F
-);
-
-CREATE TABLE IF NOT EXISTS player_season (
-    player_id     INTEGER REFERENCES player(id),
-    season        TEXT,
-    team_id       TEXT REFERENCES team(id),
-    minutes INTEGER, starts INTEGER, goals INTEGER, assists INTEGER,
-    xg REAL, xa REAL,
-    PRIMARY KEY (player_id, season, team_id)
+    position      TEXT                       -- G | D | M | F (z kolejności w składach)
 );
 
 CREATE TABLE IF NOT EXISTS lineup (
     match_id      INTEGER REFERENCES match(id),
     player_id     INTEGER REFERENCES player(id),
     team_id       TEXT REFERENCES team(id),
-    source        TEXT NOT NULL,             -- expected | official
+    source        TEXT NOT NULL,             -- official (90minut.pl) | expected (newsy) | manual
     is_starter    INTEGER NOT NULL,
+    row_index     INTEGER,                   -- pozycja w składzie 1–11 (wiersz w relacji); do wyznaczenia pozycji
     weight        REAL NOT NULL DEFAULT 1.0, -- 0.5 dla 'doubtful' w składzie przewidywanym
     minutes       INTEGER,
+    goals         INTEGER NOT NULL DEFAULT 0,
+    yellow        INTEGER NOT NULL DEFAULT 0,
+    red           INTEGER NOT NULL DEFAULT 0,
     created_at    TEXT NOT NULL,
     PRIMARY KEY (match_id, player_id, source, created_at)
 );
@@ -78,7 +70,7 @@ CREATE TABLE IF NOT EXISTS odds_snapshot (
     match_id      INTEGER NOT NULL REFERENCES match(id),
     market        TEXT NOT NULL,             -- kod rynku, np. '1X2:1' (docs/03, 3.3)
     odds          REAL NOT NULL,
-    bookmaker     TEXT NOT NULL,             -- sts | sofascore | pinnacle | bet365 | betfair_ex | market_avg | market_max
+    bookmaker     TEXT NOT NULL,             -- klucz bukmachera z The Odds API lub football-data (pinnacle, bet365, betfair_ex, market_avg, market_max)
     taken_at      TEXT NOT NULL,
     is_closing    INTEGER NOT NULL DEFAULT 0,
     UNIQUE (match_id, market, bookmaker, taken_at)
@@ -155,7 +147,8 @@ CREATE TABLE IF NOT EXISTS news_article (
 
 CREATE TABLE IF NOT EXISTS news_fact (
     id            INTEGER PRIMARY KEY,
-    article_id    INTEGER NOT NULL REFERENCES news_article(id),
+    article_id    INTEGER REFERENCES news_article(id),  -- NULL dla ręcznych potwierdzeń
+    source        TEXT NOT NULL DEFAULT 'news',         -- news | manual
     team_id       TEXT NOT NULL REFERENCES team(id),
     player_id     INTEGER REFERENCES player(id),
     category      TEXT NOT NULL,

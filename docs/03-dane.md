@@ -77,8 +77,11 @@ Licznik pozostałych kredytów (`x-requests-remaining`) jest logowany przy każd
 ### 3.3.3 90minut.pl (`collectors/ninetymin.py`)
 - **Zakres:** relacje meczowe Ekstraklasy z sezonów od 2015/16 do bieżącego, a w trakcie sezonu po każdej kolejce.
 - **Dane:** składy (wyjściowa jedenastka i zmiany z minutą), strzelcy, żółte i czerwone kartki, sędzia.
-- **Minuty zawodnika:** grający od początku ma 90 minut albo minutę zejścia. Rezerwowy ma `90 − minuta wejścia`. Zawodnik z czerwoną kartką ma minutę kartki.
-- **Zasady pobierania:** jedna strona na 3–5 s, każda relacja pobierana raz (cache surowego HTML w `data/raw/90minut/`), identyfikujący User-Agent z adresem kontaktowym. Masowe pobieranie historii uruchamiamy **po uzyskaniu zgody redakcji** (prośba wysłana mailem) albo po kilku dniach bez sprzeciwu.
+- **Minuty zawodnika:** grający od początku ma 90 minut albo minutę zejścia. Rezerwowy ma `90 − minuta wejścia` (co najmniej 1). Strona nie podaje minuty czerwonej kartki, więc kartka nie skraca minut.
+- **Zawodnicy** mają w serwisie stałe ID (`wystepy.php?id=…`), które przyjmujemy jako `PLAYER.id`, więc nie trzeba dopasowywać nazwisk między meczami.
+- **Pozycja** wynika z kolejności w składzie (serwis wypisuje: bramkarz, obrońcy, pomocnicy, napastnicy): wiersz 1 = G, 2–5 = D, 6–9 = M, 10–11 = F. Pozycja zawodnika to najczęstsza wartość z jego występów w wyjściowym składzie.
+- **Gole samobójcze** (ikona `own.gif`, dopisek „(s)”) nie są przypisywane zawodnikom. Kontrola jakości: suma goli zawodników i samobójczych musi się zgadzać z wynikiem meczu.
+- **Zasady pobierania:** jedna strona na 3–5 s, każda relacja pobierana raz (cache surowego HTML w `data/raw/90minut/`), identyfikujący User-Agent z adresem kontaktowym. **Redakcja 90minut.pl wyraziła zgodę** na pobieranie danych do projektu (1.11.2026).
 - **Dopasowanie do meczów:** data i para drużyn przez aliasy (`matches.find_match`).
 - **Kodowanie:** strony są w ISO-8859-2, więc konwertujemy je do UTF-8 przed parsowaniem.
 
@@ -167,7 +170,6 @@ Kolektory zapisują surowe odpowiedzi w `data/raw/{źródło}/`, mają limity za
 
 | Ryzyko | Skutek | Zabezpieczenie |
 |---|---|---|
-| Redakcja 90minut.pl nie zgodzi się na pobieranie | brak historycznych składów | model bez cech składu (Dixon-Coles + ratingi + motywacja); newsy tylko w bramce Jev |
 | Zmiana układu stron 90minut.pl | błędy parsera | testy parsera na zapisanych stronach, cache surowego HTML |
 | Wyczerpanie kredytów The Odds API | brak kursów do końca miesiąca | budżet z 3.3.2, próg ostrzegawczy, ograniczanie snapshotów |
 | football-data spóźnia się z wynikami | opóźnione rozliczenia | wyniki także z 90minut.pl |
