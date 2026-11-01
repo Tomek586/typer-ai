@@ -14,24 +14,24 @@ Wszystkie skrypty są w `evaluation/`, a wyniki zapisywane jako JSON i wykresy w
 
 ### A.1 Podział danych
 
-| Zbiór | Dixon-Coles, Elo, pi (wyniki z `POL.csv`) | λ-GLM, NB, kalibracja (dane SofaScore) | Do czego |
+| Zbiór | Dixon-Coles, Elo, pi (wyniki z `POL.csv`) | λ-GLM, kalibracja (składy z 90minut.pl) | Do czego |
 |---|---|---|---|
 | Trening | 2012/13 – 2023/24 | 2022/23 – 2023/24 | dopasowanie modeli |
 | Walidacja | 2024/25 | 2024/25 | strojenie parametrów, kalibracji, mieszania, progów reguł |
 | **Test** | **2025/26** | **2025/26** | **jednorazowy pomiar końcowy** |
 | **Test na żywo** | **2026/27** | **2026/27** | warunki rzeczywiste, pełny system z Jev |
 
-Zakres sezonów SofaScore (zwłaszcza dostępność xG) potwierdzimy po etapie zbierania danych. Przy krótszej historii zmniejszymy zbiór treningowy GLM i zaznaczymy to w raporcie.
+λ-GLM uczymy na sezonach ze składami z 90minut.pl. Docelowo 2015/16–2023/24, a dokładny zakres zależy od zgody redakcji i jakości danych. Przy krótszej historii zmniejszymy zbiór treningowy i zaznaczymy to w raporcie.
 
 ### A.2 Backtest walk-forward
 
 ```
 for kolejka in sezon_testowy:
     as_of = początek kolejki
-    dopasuj DC, ratingi, λ-GLM, NB wyłącznie na danych sprzed as_of
+    dopasuj DC, ratingi, λ-GLM wyłącznie na danych sprzed as_of
     (kalibracja i progi – zamrożone z walidacji)
     for mecz in kolejka:
-        predykcja wariantu „etap 2”: skład oficjalny
+        predykcja wariantu „etap 2”: skład faktyczny (90minut.pl) jako górna granica informacji
         predykcja wariantów „etap 1”: patrz A.3
         reguły value → typy (jeden na mecz)
         rozliczenie po kursach dostępnych w danych
@@ -39,7 +39,7 @@ for kolejka in sezon_testowy:
 
 - **ROI w backteście:** tylko dla **1X2 i podwójnej szansy** (jedyne historyczne kursy). Kurs podwójnej szansy wyliczamy z kursów 1X2 bez marży, a następnie doliczamy marżę rynku 1X2. To przybliżenie, oznaczone w raporcie.
 - **Kursy:** typy wyceniamy po **średnim kursie zamknięcia** (`AvgC*`), a dodatkowo po maksymalnym (`MaxC*`) jako górnej granicy.
-- **Pozostałe rynki** (gole, handicap, rożne, kartki): jakość prawdopodobieństw (log-loss, Brier, kalibracja) i trafność typów wybranych regułą `p ≥ p_min` z rynkiem „wirtualnym”. ROI liczymy dopiero w teście na żywo.
+- **Pozostałe rynki** (gole, BTTS, handicap): jakość prawdopodobieństw (log-loss, Brier, kalibracja) i trafność typów wybranych regułą `p ≥ p_min`. ROI tych rynków liczymy dopiero w teście na żywo.
 - **Bramka Jev nie występuje w backteście**, bo nie ma historycznych newsów. Jej ocena: B.2.
 
 ### A.3 Wartość informacji o składach (backtest)
@@ -50,7 +50,7 @@ Archiwalnych newsów nie mamy, więc wpływ etapu 1 i 2 szacujemy trzema wariant
 |---|---|---|
 | **BEZ-INFO** | skład referencyjny (najczęściej grający) | dolna granica: model bez żadnych newsów |
 | **NEWS-ORACLE** | skład referencyjny minus zawodnicy, którzy faktycznie nie zagrali z powodu kontuzji lub zawieszenia | górna granica tego, co mogą dać newsy w etapie 1 |
-| **SKŁAD** | skład oficjalny | odpowiednik etapu 2 |
+| **SKŁAD** | skład faktyczny z 90minut.pl | górna granica: pełna wiedza o składzie |
 
 Różnica log-loss i ROI między wariantami pokazuje, ile warta jest informacja o składach. W teście na żywo sprawdzamy, gdzie między BEZ-INFO a NEWS-ORACLE wypada faktyczny etap 1.
 
@@ -59,7 +59,7 @@ Różnica log-loss i ROI między wariantami pokazuje, ile warta jest informacja 
 - **Czas:** wszystkie kolejki od uruchomienia pipeline'u do oddania projektu, docelowo co najmniej 10 kolejek (ok. 90 meczów). Ekstraklasa ma przerwę zimową (zwykle od połowy grudnia), więc model v1 uruchamiamy jak najwcześniej (rozdz. 11).
 - **Niezmienność:** typy zapisywane są **przed meczem**. Każdego dnia zapisujemy skrót SHA-256 listy decyzji. Zmiana wpisu wsteczna jest wykrywalna.
 - **Strategie równoległe** (rozdz. 7.4): S2-OFICJALNA, S1-WSZYSTKIE, S1-POTWIERDZONE, S-NOGATE.
-- **Wszystkie rynki z kursami** (bez kartek), z ROI na kursach bet365 z SofaScore.
+- **Wszystkie rynki z kursami**, z ROI na najlepszym kursie z The Odds API (i dodatkowo na kursie Pinnacle).
 
 ### A.5 Metryki
 
@@ -68,7 +68,7 @@ Różnica log-loss i ROI między wariantami pokazuje, ile warta jest informacja 
 | **Trafność** | `(WIN + 0,5·HALF_WIN) / (liczba typów − PUSH)` | **cel: > 50%** |
 | **ROI** | `Σ zysk / Σ stawek` | **cel: > 0** |
 | Liczba typów, średni kurs | | wiarygodność; kontrola, czy trafność nie wynika z samych niskich kursów |
-| **CLV** | `średnia( kurs_typu / kurs_zamknięcia_bez_marży − 1 )`; zamknięcie: ostatni snapshot SofaScore (na żywo), Pinnacle, a od połowy 2025/26 Betfair Exchange (historia) | najlepszy wskaźnik przewagi w małej próbie |
+| **CLV** | `średnia( kurs_typu / kurs_zamknięcia_bez_marży − 1 )`; zamknięcie: ostatni snapshot Pinnacle z The Odds API (na żywo), Pinnacle, a od połowy 2025/26 Betfair Exchange (historia) | najlepszy wskaźnik przewagi w małej próbie |
 | Log-loss | `−mean(log p_zdarzenia)` | jakość prawdopodobieństw (główne kryterium modelu) |
 | Brier | `mean((p − y)²)` | j.w. |
 | RPS | ranked probability score dla 1X2 | standard w predykcji piłkarskiej |
@@ -99,7 +99,7 @@ Warianty dodawane kolejno, a dla każdego log-loss (walidacja i test) i ROI (tes
 
 1. Dixon-Coles bez ważenia czasem
 2. \+ ważenie czasem
-3. \+ λ-GLM: ratingi (Elo, pi, xG)
+3. \+ λ-GLM: ratingi (Elo, pi, forma goli)
 4. \+ λ-GLM: skład
 5. \+ λ-GLM: zmęczenie
 6. \+ λ-GLM: motywacja
@@ -134,7 +134,7 @@ Do tego ablacja „leave-one-group-out”, czyli pełny model bez jednej grupy c
 | kalibracja Noul | ECE, wykres niezawodności | raport |
 | instrukcje EN vs PL | wszystkie powyższe | raport |
 
-**Weryfikacja przez rzeczywistość:** po meczu porównujemy fakty `out` z oficjalnym składem (rozdz. 5.5). Odsetek zawodników z faktem `out`, którzy jednak zagrali, mierzy jakość faktów na danych produkcyjnych.
+**Weryfikacja przez rzeczywistość:** po meczu porównujemy fakty `out` ze składem z 90minut.pl (rozdz. 5.5). Odsetek zawodników z faktem `out`, którzy jednak zagrali, mierzy jakość faktów na danych produkcyjnych.
 
 ### B.2 Bramka decyzyjna
 

@@ -16,7 +16,7 @@
 | **Elo** | ranking siły drużyn aktualizowany po każdym meczu |
 | **EV (wartość oczekiwana)** | `p · kurs − 1`, czyli średni zysk na jednostkę stawki. Dodatnie EV oznacza zakład opłacalny w długim okresie |
 | **Function calling** | mechanizm, w którym LLM zwraca nazwę narzędzia i argumenty zamiast tekstu, a program je wykonuje |
-| **GLM** | uogólniony model liniowy (tu: regresja Poissona i ujemna dwumianowa) |
+| **GLM** | uogólniony model liniowy (tu: regresja Poissona) |
 | **Jev** | model decyzyjny „System One” firmy TypeSafe AI. Zwraca typowane decyzje z prawdopodobieństwami zamiast tekstu |
 | **Kalibracja** | zgodność prawdopodobieństw z rzeczywistością: zdarzenia z p = 60% powinny zachodzić w ok. 60% przypadków |
 | **Kelly (kryterium)** | wzór na optymalną wielkość stawki przy znanej przewadze. W projekcie ¼ Kelly'ego, wyłącznie informacyjnie |
@@ -26,7 +26,6 @@
 | **Marża** | przewaga bukmachera: `Σ(1/kurs) − 1` na danym rynku |
 | **Metoda Shina** | sposób usuwania marży uwzględniający, że bukmacher bardziej zaniża kursy na outsiderów |
 | **Mieszanie z rynkiem** | łączenie prawdopodobieństw modelu z prawdopodobieństwami z kursów (rozdz. 4.9) |
-| **NB (rozkład ujemny dwumianowy)** | rozkład liczby zdarzeń z większą wariancją niż Poisson; stosowany do rożnych i kartek |
 | **Pi-ratings** | system ratingów z osobnymi wartościami dla gry u siebie i na wyjeździe (Constantinou i Fenton, 2013) |
 | **Platt (kalibracja)** | korekta prawdopodobieństw funkcją `σ(a·logit(p) + b)` |
 | **RAG** | retrieval-augmented generation: LLM odpowiada na podstawie wyszukanych fragmentów dokumentów |
@@ -39,4 +38,4 @@
 | **Typ wstępny / potwierdzony** | typ z etapu 1 (przed składami) / z etapu 2 (po składach), rozdz. 7.4 |
 | **Value** | sytuacja, w której prawdopodobieństwo modelu jest wyższe niż wynikające z kursu, czyli EV > 0 |
 | **Walk-forward** | backtest, w którym model jest ponownie dopasowywany w miarę upływu czasu, tylko na danych z przeszłości |
-| **xG (expected goals)** | oczekiwane gole: suma prawdopodobieństw zdobycia gola z oddanych strzałów |
+| **xG (expected goals)** | oczekiwane gole: suma prawdopodobieństw zdobycia gola z oddanych strzałów. W projekcie niedostępne w darmowych źródłach dla Ekstraklasy |

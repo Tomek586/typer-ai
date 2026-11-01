@@ -12,7 +12,7 @@ Budujemy **chatbota po polsku, który analizuje mecze Ekstraklasy i proponuje ty
 
 | Warstwa | Co robi | Czym |
 |---|---|---|
-| **Model statystyczny** | liczy prawdopodobieństwo każdego zdarzenia (1X2, gole, BTTS, handicap, rożne, kartki) | Dixon-Coles (model goli) + korekta o siłę drużyn (Elo, pi-ratings, xG), skład, zmęczenie, motywację z tabeli + kalibracja |
+| **Model statystyczny** | liczy prawdopodobieństwo każdego zdarzenia (1X2, podwójna szansa, gole, BTTS, handicap) | Dixon-Coles (model goli) + korekta o siłę drużyn (Elo, pi-ratings), skład, zmęczenie, motywację z tabeli + kalibracja |
 | **Jev** (model decyzyjny TypeSafe AI) | podejmuje szybkie decyzje typu „tak/nie” lub „wybierz opcję”: ocenia newsy, przepuszcza lub blokuje typy, rozpoznaje intencję w czacie, pilnuje bezpieczeństwa | API Jev; zapasowo zwykły LLM z tymi samymi pytaniami |
 | **Chatbot LLM** | rozmawia, wywołuje narzędzia (statystyki, kursy, predykcja, typy), wyszukuje w newsach i regulaminie (RAG), tłumaczy decyzje | Gemini (główny), Llama przez Groq, Bielik (porównanie) |
 
@@ -21,10 +21,10 @@ Budujemy **chatbota po polsku, który analizuje mecze Ekstraklasy i proponuje ty
 ## Jak powstaje typ
 
 1. **Model** liczy prawdopodobieństwo `p` dla każdego zdarzenia.
-2. Porównujemy je z **kursem bukmachera** (bet365, pobierany z SofaScore): `EV = p · kurs − 1` (oczekiwany zysk).
+2. Porównujemy je z **najlepszym kursem** spośród ok. 20 bukmacherów (The Odds API): `EV = p · kurs − 1` (oczekiwany zysk).
 3. **Reguły:** typ jest kandydatem tylko, gdy `p ≥ 52%`, `EV ≥ 3%` i kurs mieści się w 1,50–2,30. Najwyżej jeden typ na mecz. Pierwsza reguła celuje w trafność > 50%, druga w zysk.
 4. **Etap 1, typ wstępny** (dzień wcześniej lub rano): model korzysta ze składu **przewidywanego z newsów**, a Jev decyduje: wydaj / wstrzymaj / odrzuć.
-5. **Etap 2, potwierdzenie** (ok. 60 min przed meczem): model liczy ponownie na **oficjalnym składzie** i aktualnych kursach, a Jev decyduje: potwierdź / anuluj.
+5. **Etap 2, potwierdzenie** (ok. 60 min przed meczem): model liczy ponownie na **najświeższych newsach** (np. składach podanych przez kluby), opcjonalnie po **ręcznym potwierdzeniu** nieobecności, i na aktualnych kursach, a Jev decyduje: potwierdź / anuluj.
 6. **Typy potwierdzone** to oficjalny wynik, z którego liczymy skuteczność.
 
 Jeśli żaden mecz nie spełnia reguł, typer nie podaje typu. Nie szukamy typów na siłę.
@@ -39,11 +39,11 @@ Newsy pobieramy co 2 godziny z RSS. Jev klasyfikuje każdy artykuł: której dru
 ## Dane
 
 - **football-data.co.uk:** wyniki Ekstraklasy od 2012/13 i kursy 1X2 (bez statystyk i innych rynków).
-- **SofaScore (scraping):** statystyki, xG, składy, zawodnicy, sędziowie.
-- **SofaScore** daje też kursy bet365 na wszystkie rynki oprócz kartek; na nich podejmujemy decyzje. Kartki modelujemy, ale bez typów.
+- **The Odds API (darmowy plan):** bieżące kursy ok. 20 bukmacherów (m.in. Pinnacle); bierzemy najlepszy kurs.
+- **90minut.pl:** historyczne składy z minutami, strzelcy, kartki (za zgodą redakcji); z nich liczymy ważność zawodników.
 - **Newsy (RSS)** i **regulaminy bukmacherów** do RAG.
 
-Uwaga: STS okazał się niemożliwy do pobierania bez obchodzenia zabezpieczeń strony, dlatego z niego zrezygnowaliśmy.
+Uwaga: SofaScore, STS, Flashscore i strona ligi blokują automaty, a API-Football jest płatne dla bieżącego sezonu, dlatego z nich zrezygnowaliśmy. Projekt kosztuje 0 zł. Brak oficjalnych składów przed meczem nadrabiamy NLP, czyli nieobecnościami wyciąganymi z newsów.
 
 ## Jak sprawdzimy, czy działa
 
@@ -60,7 +60,7 @@ Uwaga: STS okazał się niemożliwy do pobierania bez obchodzenia zabezpieczeń 
 
 | Osoba A: dane, model, typy | Osoba B: NLP, Jev, interfejsy |
 |---|---|
-| scraper SofaScore (dane i kursy), import CSV | pipeline newsów i klasyfikacja Jev |
+| kolektory: football-data, The Odds API, 90minut.pl | pipeline newsów i klasyfikacja Jev |
 | model statystyczny i kalibracja | silnik decyzyjny: bramka, router, guardrails |
 | reguły typów, dwa etapy, kupony, rozliczanie | chatbot: agent, narzędzia, RAG, prompty |
 | backtest i test na żywo | ocena NLP: newsy, router, chatbot, porównanie LLM |
@@ -70,7 +70,7 @@ Uwaga: STS okazał się niemożliwy do pobierania bez obchodzenia zabezpieczeń 
 
 ## Kolejność prac (tygodnie od startu)
 
-1. **Tydzień 1:** repozytorium, baza, **konto Jev**, test źródeł danych (zrobione: SofaScore działa, STS odpada).
+1. **Tydzień 1:** repozytorium, baza, **konto Jev**, test źródeł danych (zrobione), mail do 90minut.pl z prośbą o zgodę.
 2. **Tydzień 2–3:** prosty model + reguły + codzienne zapisywanie typów. **Musi ruszyć szybko**, bo od połowy grudnia Ekstraklasa ma przerwę zimową, a potrzebujemy jak najwięcej meczów do testu na żywo.
 3. **Tydzień 3–5:** newsy + Jev, pełny model, bramka Jev.
 4. **Tydzień 4–7:** chatbot, interfejsy, ocena NLP.
@@ -79,7 +79,7 @@ Uwaga: STS okazał się niemożliwy do pobierania bez obchodzenia zabezpieczeń 
 ## Do sprawdzenia od razu
 
 - czy da się założyć konto Jev (console.typesafe.ai) i jak radzi sobie z polskimi newsami,
-- czy SofaScore ma xG dla starszych sezonów Ekstraklasy,
+- czy redakcja 90minut.pl zgadza się na pobieranie składów,
 - czy Bielik jest dostępny przez API.
 
 ## Uczciwie o ryzyku

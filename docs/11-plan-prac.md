@@ -7,10 +7,10 @@ Termin oddania nie jest jeszcze znany, więc etapy opisane są w tygodniach od s
 | Etap | Tydz. | Zakres | Kryterium ukończenia |
 |---|---|---|---|
 | **0. Start** | 1 | repozytorium, struktura, `.env`, schemat SQLite, aliasy drużyn, **założenie konta Jev i test API na 10 polskich newsach**, decyzja o dostępie do Bielika | oba środowiska działają; wiadomo, czy Jev jest dostępny |
-| **1. Dane** | 1–2 | import `POL.csv`; SofaScore: historia (statystyki, xG, składy, zawodnicy, sędziowie), bieżące mecze i kursy; pogoda; lista źródeł newsów | baza z historią; codzienne snapshoty kursów STS |
+| **1. Dane** | 1–2 | import `POL.csv` (gotowe); The Odds API: terminarz i kursy (gotowe); 90minut.pl: parser relacji, a po zgodzie redakcji historia składów; pogoda; lista źródeł newsów | baza z historią; codzienne snapshoty kursów |
 | **2. Model v1 + start testu na żywo** | 2–3 | Elo, pi-ratings, Dixon-Coles, macierz → rynki golowe, reguły value, cykl życia typu (bez bramki: wszystko WYDAJ/POTWIERDŹ), rozliczanie, harmonogram, powiadomienia Telegram (minimalne) | **od tego dnia typy zapisywane są codziennie** |
 | **3. Newsy + Jev** | 3–4 | pipeline newsów, deduplikacja, `DecisionEngine` (Jev + LLM), pytania klasyfikacyjne, fakty, przewidywany skład, oznaczenie 150 artykułów | fakty z newsów w bazie; F1 na zbiorze testowym |
-| **4. Model v2** | 3–5 | xG-form, cechy składu, zmęczenia i motywacji, λ-GLM, NB dla rożnych i kartek, kalibracja, mieszanie z rynkiem, strojenie na walidacji, backtest | model zamrożony, wyniki backtestu |
+| **4. Model v2** | 3–5 | ważność zawodników i cechy składu, zmęczenia i motywacji, λ-GLM, kalibracja, mieszanie z rynkiem, strojenie na walidacji, backtest | model zamrożony, wyniki backtestu |
 | **5. Bramka Jev** | 5 | pytania i polityka bramki, strategie równoległe (S-NOGATE itd.), wdrożenie do testu na żywo razem z modelem v2 | bramka działa w etapach 1 i 2 |
 | **6. Chatbot** | 4–6 | `LLMClient` (Gemini, Groq, Bielik), narzędzia, pętla agenta, router Jev, RAG (hybryda + reranking), guardrails, prompty | chatbot odpowiada na 70 pytań testowych |
 | **7. Interfejsy** | 5–7 | Streamlit (wszystkie strony), pełny bot Telegram | demo gotowe |
@@ -23,8 +23,8 @@ Termin oddania nie jest jeszcze znany, więc etapy opisane są w tygodniach od s
 
 | Obszar | Osoba A: **dane, model, typy** | Osoba B: **NLP, Jev, interfejsy** |
 |---|---|---|
-| Dane | `POL.csv`, SofaScore (dane i kursy), pogoda, schemat bazy | kolektor newsów, regulaminy bukmacherów |
-| Model | ratingi, Dixon-Coles, λ-GLM, NB, kalibracja, mieszanie | – |
+| Dane | `POL.csv`, The Odds API, 90minut.pl, pogoda, schemat bazy | kolektor newsów, regulaminy bukmacherów |
+| Model | ratingi, Dixon-Coles, λ-GLM, kalibracja, mieszanie | – |
 | Newsy | cechy składu (`lineup_*`) z faktów | pipeline newsów, pytania Jev, fakty, przewidywany skład |
 | Jev | dane wejściowe bramki (`state`) | `DecisionEngine`, polityki, router, guardrails |
 | Typy | reguły value, cykl życia, kupony, rozliczanie | – |
@@ -45,9 +45,9 @@ Termin oddania nie jest jeszcze znany, więc etapy opisane są w tygodniach od s
 | Mało typów w teście na żywo (przerwa zimowa) | wysokie | wysoki | start modelu v1 w tygodniu 2–3; łączny raport backtest + test na żywo; CLV jako wskaźnik w małej próbie |
 | Brak dostępu do Jev | średnie | średni | `LLMEngine` z tymi samymi pytaniami; porównanie Jev vs LLM odpada |
 | Jev słabo radzi sobie z polskim tekstem | średnie | średni | instrukcje po angielsku; ewentualnie tłumaczenie tytułu i leadu artykułu przez LLM przed klasyfikacją; porównanie z `LLMEngine` |
-| SofaScore przestaje udostępniać kursy | niskie | wysoki | cache; kursy 1X2 z football-data (średnia rynkowa) jako zapas do oceny |
-| SofaScore blokuje scraping | średnie | wysoki | cache historii; API-Football (darmowy plan) dla wyników i składów |
-| Brak xG w starszych sezonach | średnie | niski | cechy xG opcjonalne; GLM trenowany na krótszej historii |
+| Wyczerpanie kredytów The Odds API | średnie | wysoki | budżet kredytów (rozdz. 3.3.2), próg ostrzegawczy |
+| Brak zgody 90minut.pl lub zmiana układu stron | średnie | średni | model bez cech składu (ratingi + motywacja); newsy tylko w bramce Jev |
+| Brak oficjalnych składów przed meczem | pewne | średni | newsy (NLP) + ręczne potwierdzenie; ocena wartości tej informacji w ewaluacji (rozdz. 10, A.3) |
 | Limity darmowych API LLM | średnie | niski | cache w ewaluacji, przełączanie Gemini ↔ Groq |
 | Bielik niedostępny lub za wolny | średnie | niski | porównanie tylko Gemini vs Llama, z opisem próby |
 | Mało newsów o mniejszych klubach | średnie | niski | strony klubów jako źródło; newsy mają z założenia małą rolę |

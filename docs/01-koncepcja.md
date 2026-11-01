@@ -4,7 +4,7 @@
 
 Osoba, która chce świadomie obstawić mecz Ekstraklasy, musi zebrać informacje z wielu miejsc:
 
-- statystyki drużyn: forma, gole, xG, rożne, kartki, bilans bezpośrednich spotkań,
+- statystyki drużyn: forma, gole, bilans bezpośrednich spotkań,
 - informacje o składach i wydarzeniach: kontuzje, zawieszenia, zmiana trenera, problemy w klubie, zmęczenie po meczu pucharowym, pogoda, zamknięty stadion,
 - kursy, które trzeba przeliczyć na prawdopodobieństwo i oczyścić z marży bukmachera,
 - regulaminy, np. co się dzieje z zakładem przy przerwanym meczu.
@@ -17,7 +17,7 @@ Typer AI to system złożony z trzech współpracujących warstw:
 
 | Warstwa | Za co odpowiada | Technologia |
 |---|---|---|
-| **Model predykcyjny** | liczy prawdopodobieństwa wszystkich zdarzeń meczu | Dixon-Coles + regresja korygująca (Elo, pi-ratings, xG, siła składu, zmęczenie, motywacja) + kalibracja |
+| **Model predykcyjny** | liczy prawdopodobieństwa wszystkich zdarzeń meczu | Dixon-Coles + regresja korygująca (Elo, pi-ratings, siła składu, zmęczenie, motywacja) + kalibracja |
 | **Silnik decyzyjny Jev** | podejmuje szybkie, typowane decyzje: ocenia newsy, przepuszcza lub wstrzymuje typy, kieruje pytania w czacie, pilnuje bezpieczeństwa | Jev (TypeSafe AI), model „System One” |
 | **Chatbot LLM** | rozmawia po polsku, wywołuje narzędzia, wyszukuje dokumenty (RAG), tłumaczy decyzje | Gemini / Llama (Groq) / Bielik + RAG |
 
@@ -33,9 +33,9 @@ Podział ról wynika z mocnych i słabych stron każdej technologii:
    - model liczy prawdopodobieństwa, uwzględniając przewidywany skład wynikający z newsów,
    - reguły value wybierają kandydatów,
    - Jev przepuszcza, wstrzymuje albo odrzuca kandydatów.
-2. **Etap 2, potwierdzenie** (ok. 60 min przed meczem, po ogłoszeniu składów):
-   - model liczy prawdopodobieństwa ponownie, na faktycznych składach,
-   - pobierane są aktualne kursy (bet365 przez SofaScore) i ponownie sprawdzane reguły,
+2. **Etap 2, potwierdzenie** (ok. 60 min przed meczem):
+   - model liczy prawdopodobieństwa ponownie, na składzie przewidywanym z najnowszych newsów i opcjonalnych ręcznych potwierdzeń,
+   - pobierane są aktualne kursy ok. 20 bukmacherów i ponownie sprawdzane reguły,
    - Jev ponownie ocenia typ, który zostaje **potwierdzony** albo **anulowany**.
 3. Typy potwierdzone to **oficjalny wynik typera**: są rozliczane i wchodzą do statystyk skuteczności.
 
@@ -59,9 +59,10 @@ Szczegóły opisuje [07-typy-i-decyzje.md](07-typy-i-decyzje.md).
 
 **W zakresie:**
 - liga: **Ekstraklasa**,
-- rynki: **1X2, podwójna szansa, gole (powyżej/poniżej, BTTS), handicap azjatycki i europejski, rożne, kartki**,
-- kursy, na których podejmowane są decyzje: **bet365, pobierane z SofaScore** (STS odpadł, bo jego oferty nie da się pobierać bez obchodzenia zabezpieczeń strony, rozdz. 3.1). Punkt odniesienia dla historii: Pinnacle i Betfair Exchange z football-data.co.uk,
-- **kartki** są modelowane (prawdopodobieństwa w czacie, ocena kalibracji), ale typer **nie wydaje na nie typów**, bo nie ma dla nich kursów,
+- rynki: **1X2, podwójna szansa, gole (powyżej/poniżej), BTTS, handicap azjatycki**,
+- kursy, na których podejmowane są decyzje: **najlepszy kurs spośród ok. 20 bukmacherów z The Odds API**. Punkt odniesienia: Pinnacle (na żywo i w historii) i Betfair Exchange (historia),
+- dane wyłącznie z **darmowych źródeł bez obchodzenia zabezpieczeń**: football-data.co.uk, The Odds API, 90minut.pl, newsy. SofaScore, STS, Flashscore, strona ligi i płatne API-Football odpadły (rozdz. 3.2),
+- **rożne i kartki są poza zakresem**, bo brak dla nich darmowych kursów i bieżących statystyk,
 - newsy i wydarzenia: kontuzje, zawieszenia, powroty, zmiana trenera, sytuacja w klubie, terminarz i zmęczenie, motywacja i kontekst, warunki meczu,
 - interfejsy: **Streamlit** (czat + panele) i **bot Telegram**,
 - język: **polski**.
@@ -91,14 +92,14 @@ Rynek bukmacherski jest efektywny, więc przewaga może pochodzić tylko z kilku
 
 | Źródło przewagi | Mechanizm w projekcie | Rozdział |
 |---|---|---|
-| Lepsza miara siły drużyn niż same wyniki | xG, pi-ratings, Elo, ważenie czasem | [4](04-model-predykcyjny.md) |
+| Lepsza miara siły drużyn niż tabela | pi-ratings (osobno u siebie i na wyjeździe), Elo, ważenie czasem | [4](04-model-predykcyjny.md) |
 | Informacja o składach szybciej niż rynek | przewidywany skład z newsów (etap 1), faktyczny skład (etap 2), indeks siły składu | [4](04-model-predykcyjny.md), [5](05-newsy-i-wydarzenia.md) |
 | Kontekst, którego nie ma w statystykach | zmęczenie, motywacja z tabeli, wydarzenia z newsów oceniane przez Jev | [5](05-newsy-i-wydarzenia.md), [6](06-silnik-decyzyjny-jev.md) |
 | Dyscyplina decyzji | sztywne reguły value, brak typów „na siłę”, bramka decyzyjna Jev z prawem weta | [7](07-typy-i-decyzje.md) |
 | Moment zawarcia zakładu | dwa etapy: wczesny kurs vs pełna informacja; pomiar CLV | [7](07-typy-i-decyzje.md), [10](10-ewaluacja.md) |
 | Dobra kalibracja | kalibracja per rodzina rynków, mieszanie z rynkiem, wybór modeli po log-loss | [4](04-model-predykcyjny.md) |
 
-Porównywanie kursów u wielu bukmacherów (*line shopping*) to zwykle duże źródło przewagi. W projekcie decyzje opierają się na jednym bukmacherze (bet365 przez SofaScore), więc z tego źródła korzystamy w ograniczonym stopniu. Architektura kolektora kursów pozwala dodać kolejnych bukmacherów jako osobne adaptery (rozdz. 3).
+**Porównywanie kursów u wielu bukmacherów** (*line shopping*) to zwykle duże źródło przewagi. The Odds API daje kursy ok. 20 bukmacherów naraz, więc każdy typ wyceniamy po najlepszym dostępnym kursie (z odrzuceniem kursów odstających, rozdz. 3.3.4). Przykład z pierwszego pobrania: najlepszy kurs na zwycięstwo Zagłębia wynosił 2,63, a u Pinnacle 2,51.
 
 ## 1.8 Realistyczne oczekiwania
 

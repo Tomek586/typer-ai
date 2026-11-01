@@ -6,7 +6,7 @@ Newsy mają **celowo ograniczoną** rolę. Wpływają na system tylko na trzy sp
 
 | # | Droga wpływu | Kiedy | Siła wpływu |
 |---|---|---|---|
-| 1 | **Przewidywany skład** (kontuzje, zawieszenia, powroty) → cechy `lineup_*` w modelu | tylko etap 1; w etapie 2 zastępuje go oficjalny skład | ograniczona współczynnikiem wyuczonym na historii i limitem λ ∈ [0,75; 1,33] |
+| 1 | **Przewidywany skład** (kontuzje, zawieszenia, powroty) → cechy `lineup_*` w modelu | etap 1 i 2: newsy to **główne przedmeczowe źródło informacji o składach** (brak oficjalnych składów w darmowych źródłach), w etapie 2 uzupełniane ręcznym potwierdzeniem | ograniczona współczynnikiem wyuczonym na historycznych składach z 90minut.pl i limitem λ ∈ [0,75; 1,33] |
 | 2 | **Kontekst dla bramki Jev** (wszystkie kategorie) | etap 1 i 2 | **tylko weto**: Jev może wstrzymać lub odrzucić typ, nigdy go nie dodaje |
 | 3 | **RAG w czacie** | zawsze | brak wpływu na typy; odpowiedzi na pytania użytkownika |
 
@@ -154,7 +154,7 @@ Zawodnik zostaje przypisany do faktu, gdy `noul ≥ 0,7`.
 | `fatigue_schedule` | „Rotacja przed pucharem” | – (zmęczenie liczy model z terminarza) | ✅ | do następnego meczu |
 | `motivation_context` | „Mecz o utrzymanie” | – (motywację liczy model z tabeli) | ✅ | do następnego meczu |
 | `match_conditions` | „Ulewa, grząska murawa”, „mecz bez kibiców” | – | ✅ | do następnego meczu |
-| `transfer` | „Nowy napastnik” | – (kadrę aktualizuje SofaScore) | – | – |
+| `transfer` | „Nowy napastnik” | – (kadrę aktualizują składy z 90minut.pl) | – | – |
 | `other` | wywiad, historia | – | – | – (tylko RAG) |
 
 Fakty o `impact = 0` (brak wpływu) nie trafiają do bramki. Zostają tylko w RAG.
@@ -187,7 +187,7 @@ Fakty o `impact = 0` (brak wpływu) nie trafiają do bramki. Zostają tylko w RA
 2. **Sprzeczność** (`out` w jednym źródle, `available` w drugim): wygrywa fakt o wyższej pewności (`official > reported > speculation`), a przy równej pewności nowszy.
 3. **Potwierdzenia:** duplikat z innego źródła albo kolejny artykuł z tym samym faktem podnosi `certainty` z `speculation` na `reported`. Źródło oficjalne podnosi ją na `official`.
 4. **Wygasanie:** po `valid_until` (tabela 5.3) albo po rozegraniu meczu, którego fakt dotyczył (zawieszenia, zmęczenie, warunki).
-5. **Weryfikacja przez skład:** po meczu porównujemy fakty `out` z oficjalnym składem. Zawodnik, który zagrał mimo faktu `out`, oznacza błędny fakt. Te dane trafiają do ewaluacji (rozdz. 10).
+5. **Weryfikacja przez skład:** po meczu porównujemy fakty `out` ze składem z 90minut.pl. Zawodnik, który zagrał mimo faktu `out`, oznacza błędny fakt. Te dane trafiają do ewaluacji (rozdz. 10).
 
 **Wpływ pewności na przewidywany skład:**
 

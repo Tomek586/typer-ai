@@ -14,13 +14,13 @@ Typer AI łączy trzy warstwy, z których każda robi to, w czym jest najlepsza:
 
 | Warstwa | Rola | Technologia |
 |---|---|---|
-| **Model predykcyjny** | liczy prawdopodobieństwa wszystkich zdarzeń meczu | Dixon-Coles + λ-GLM (Elo, pi-ratings, xG, siła składu, zmęczenie, motywacja) + NB dla rożnych i kartek + kalibracja |
+| **Model predykcyjny** | liczy prawdopodobieństwa wszystkich zdarzeń meczu | Dixon-Coles + λ-GLM (Elo, pi-ratings, siła składu, zmęczenie, motywacja) + kalibracja |
 | **Silnik decyzyjny Jev** | szybkie, typowane decyzje: ocena newsów, bramka typu (wydaj / wstrzymaj / odrzuć), routing intencji, guardrails | Jev (TypeSafe AI), z LLM jako planem B |
 | **Chatbot LLM** | rozmowa po polsku, narzędzia, RAG, wyjaśnienia | Gemini / Llama (Groq) / Bielik, ChromaDB, `mmlw-retrieval-roberta-base` |
 
 Typy powstają w dwóch etapach:
 1. **typ wstępny** (dzień wcześniej lub rano), na składzie przewidywanym z newsów,
-2. **potwierdzenie albo anulowanie** ok. 60 min przed meczem, na oficjalnych składach i aktualnych kursach (bet365 przez SofaScore).
+2. **potwierdzenie albo anulowanie** ok. 60 min przed meczem, na najświeższych newsach (i opcjonalnym ręcznym potwierdzeniu składu) oraz najlepszym kursie spośród ok. 20 bukmacherów (The Odds API).
 
 Typy potwierdzone to oficjalny wynik typera.
 
@@ -40,7 +40,7 @@ Szczegóły: [rozdz. 1.6](docs/01-koncepcja.md#16-definicja-sukcesu-dlaczego-tra
 | 1 | [Koncepcja](docs/01-koncepcja.md) | problem, rozwiązanie, cele, zakres, źródła przewagi, odpowiedzialna gra |
 | 2 | [Architektura](docs/02-architektura.md) | komponenty, przepływy, harmonogram zadań, struktura repozytorium, technologie |
 | 3 | [Dane](docs/03-dane.md) | źródła, adaptery kursów, kody rynków, schemat bazy, zasady anty-wyciekowe |
-| 4 | [Model predykcyjny](docs/04-model-predykcyjny.md) | ratingi, Dixon-Coles, cechy, λ-GLM, rynki, NB, kalibracja, mieszanie z rynkiem, strojenie |
+| 4 | [Model predykcyjny](docs/04-model-predykcyjny.md) | ratingi, Dixon-Coles, cechy, λ-GLM, rynki, kalibracja, mieszanie z rynkiem, strojenie |
 | 5 | [Newsy i wydarzenia](docs/05-newsy-i-wydarzenia.md) | pipeline, klasyfikacja Jev, fakty, przewidywany skład, kontekst |
 | 6 | [Silnik decyzyjny Jev](docs/06-silnik-decyzyjny-jev.md) | czym jest Jev, `DecisionEngine`, cztery zastosowania, polityki, ocena, plan B, koszty |
 | 7 | [Typy i decyzje](docs/07-typy-i-decyzje.md) | marża, EV, reguły, dwuetapowy cykl życia typu, stawki, kupony, rozliczanie |

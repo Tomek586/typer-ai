@@ -10,7 +10,7 @@ Uruchomienie: `streamlit run typerai/apps/streamlit_app.py`
 |---|---|---|
 | **Czat** | rozmowa z Typer AI; wybór modelu LLM; rozwijany panel „Jak powstała odpowiedź”: intencja z routera (z prawdopodobieństwem), wywołania narzędzi, fragmenty RAG, decyzje guardrails | użytkownik, prezentacja |
 | **Typy** | tabela typów: status (wstępny / wstrzymany / potwierdzony / anulowany), mecz, zdarzenie, kurs etap 1 → etap 2, p, EV, decyzja bramki; przycisk „Zbuduj kupon” | użytkownik |
-| **Mecz** | karta meczu: ratingi, forma, xG, H2H, skład przewidywany vs oficjalny, heatmapa macierzy wyników, wszystkie rynki (model vs kursy), top czynniki predykcji, aktywne fakty z newsów, pogoda | użytkownik |
+| **Mecz** | karta meczu: ratingi, forma, H2H, skład przewidywany (z oznaczeniem źródła: newsy / ręczne) vs po meczu faktyczny, heatmapa macierzy wyników, wszystkie rynki (model vs kursy), top czynniki predykcji, aktywne fakty z newsów, pogoda | użytkownik |
 | **Newsy** | lista artykułów z klasyfikacją Jev (kategoria, wpływ, kierunek, pewność, zawodnicy), filtr po drużynie; ręczna korekta etykiety, zapisywana do zbioru ewaluacyjnego | zespół |
 | **Decyzje Jev** | log `DECISION_LOG`: cel, odpowiedzi z prawdopodobieństwami, decyzja, czas; statystyki per zastosowanie | zespół, prezentacja |
 | **Wyniki** | skumulowany zysk w czasie, trafność i ROI z przedziałami ufności, CLV, podział na rynki, przedziały kursów i strategie (S2 / S1 / NOGATE), porównanie z baseline'ami | użytkownik, raport |

@@ -23,9 +23,8 @@ flowchart TB
     end
 
     subgraph CORE[Rdzeń analityczny]
-        RAT[Ratingi<br/>Elo, pi, xG]
+        RAT[Ratingi<br/>Elo, pi]
         DC[Dixon-Coles + λ-GLM]
-        STATM[Modele NB<br/>rożne, kartki]
         CAL[Kalibracja<br/>+ mieszanie z rynkiem]
         PICKS[Reguły value<br/>cykl życia typu]
         COUP[Kupony]
@@ -36,7 +35,8 @@ flowchart TB
         DB[(SQLite)]
         VDB[(ChromaDB)]
         FD[football-data.co.uk]
-        SS[SofaScore]
+        OA[The Odds API]
+        NM[90minut.pl]
         NEWS[Newsy RSS / strony<br/>regulaminy PDF]
     end
 
@@ -44,11 +44,10 @@ flowchart TB
     AGENT --> RAG --> VDB
     AGENT -->|narzędzia| CORE
     GUARD & ROUTER & GATE & NEWSC --> DE
-    FD & SS --> DB
+    FD & OA & NM --> DB
     NEWS --> NEWSC --> DB
     NEWS --> VDB
     DB --> RAT --> DC --> CAL
-    DB --> STATM --> CAL
     CAL --> PICKS --> GATE --> TRACK
     PICKS --> COUP
     TRACK --> DB
@@ -56,8 +55,8 @@ flowchart TB
 
 | Komponent | Moduł | Opis | Rozdział |
 |---|---|---|---|
-| Kolektory danych | `typerai/collectors/` | import i scraping: football-data, SofaScore (dane i kursy), newsy | [3](03-dane.md) |
-| Model predykcyjny | `typerai/model/` | ratingi, Dixon-Coles, λ-GLM, NB, kalibracja, rynki | [4](04-model-predykcyjny.md) |
+| Kolektory danych | `typerai/collectors/` | football-data, The Odds API, 90minut.pl, newsy, pogoda | [3](03-dane.md) |
+| Model predykcyjny | `typerai/model/` | ratingi, Dixon-Coles, λ-GLM, kalibracja, rynki | [4](04-model-predykcyjny.md) |
 | Pipeline newsów | `typerai/news/` | zbieranie, deduplikacja, klasyfikacja Jev, fakty, przewidywany skład | [5](05-newsy-i-wydarzenia.md) |
 | Silnik decyzyjny | `typerai/decision/` | wspólny interfejs dla Jev i LLM, definicje pytań, polityki decyzji, log | [6](06-silnik-decyzyjny-jev.md) |
 | Typy i decyzje | `typerai/betting/` | marża, EV, reguły, dwuetapowy cykl życia typu, stawki, kupony, rozliczanie | [7](07-typy-i-decyzje.md) |
@@ -88,7 +87,7 @@ sequenceDiagram
     DB-->>TG: typy wstępne
 
     Note over SCH: T-60 min (po składach) – ETAP 2
-    SCH->>COL: oficjalne składy + kursy
+    SCH->>COL: najnowsze newsy, ręczne potwierdzenia, kursy
     SCH->>M: predykcja (faktyczne składy)
     M->>R: reguły na nowych kursach
     R->>J: typ + zmiany od etapu 1
@@ -128,8 +127,9 @@ sequenceDiagram
 | Kiedy | Zadanie | Co robi |
 |---|---|---|
 | co 2 h (08:00–22:00) | `collect_news` | RSS → nowe artykuły → deduplikacja → klasyfikacja Jev → fakty → indeks RAG |
-| codziennie 06:00 | `collect_fixtures` | terminarz na 10 dni (SofaScore), sędziowie, prognoza pogody dla meczów w ciągu 48 h |
-| co 6 h | `collect_odds` | snapshot kursów (SofaScore / bet365) dla meczów w ciągu 7 dni |
+| codziennie 06:00 | `collect_events` | terminarz nadchodzących meczów (The Odds API, bez kosztu), prognoza pogody dla meczów w ciągu 48 h |
+| 09:00 i 18:00 | `collect_odds` | snapshot kursów ok. 20 bukmacherów (3 kredyty The Odds API) |
+| codziennie 08:00 / 10:00 | `collect_results` / `collect_lineups` | wyniki (football-data), składy z minutami (90minut.pl) |
 | D-1 18:00 i D 09:00 | `stage1_picks` | etap 1 dla meczów w ciągu 36 h, które nie mają jeszcze decyzji etapu 1 |
 | co 10 min w dni meczowe | `stage2_watch` | dla meczów, które zaczynają się za 75–45 min: składy → etap 2 |
 | T-5 min | `closing_odds` | ostatni snapshot kursów (do metryki CLV) |
@@ -156,18 +156,17 @@ typer-ai/
 │   ├── markets.py                 # kody rynków i ich rozliczanie
 │   ├── collectors/
 │   │   ├── football_data.py
-│   │   ├── sofascore.py           # mecze, statystyki, xG, składy, zawodnicy, sędziowie
+│   │   ├── ninetymin.py           # 90minut.pl: składy, minuty, strzelcy, kartki
 │   │   ├── odds/
 │   │   │   ├── base.py            # interfejs OddsAdapter
-│   │   │   └── sofascore_odds.py
+│   │   │   └── odds_api.py
 │   │   ├── weather.py             # prognoza pogody (Open-Meteo)
 │   │   └── news_feeds.py
 │   ├── model/
-│   │   ├── ratings/{elo,pi,xg}.py
+│   │   ├── ratings/{elo,pi}.py
 │   │   ├── dixon_coles.py
 │   │   ├── lambda_glm.py          # korekta λ kowariantami
 │   │   ├── features.py            # skład, zmęczenie, motywacja
-│   │   ├── stats_markets.py       # NB: rożne, kartki
 │   │   ├── score_matrix.py        # macierz wyników → rynki
 │   │   ├── calibration.py
 │   │   └── predict.py             # jeden punkt wejścia: predict(match_id, stage)
@@ -214,10 +213,10 @@ typer-ai/
 |---|---|---|
 | Język | Python 3.11+ | standard w NLP i ML |
 | Dane | pandas, numpy, SQLite | proste, bez serwera bazy danych |
-| Scraping | Playwright, httpx | SofaScore blokuje zwykłe zapytania HTTP (403); dane pobieramy z wnętrza przeglądarki |
+| Pobieranie danych | httpx | wszystkie źródła działają przez zwykłe HTTP (API z kluczem lub statyczny HTML) |
 | Pogoda | Open-Meteo API | darmowe, bez klucza |
 | Newsy | feedparser, trafilatura | RSS + czysty tekst artykułu |
-| Model | scipy (MLE), statsmodels (GLM Poissona, NB), scikit-learn (kalibracja) | dojrzałe, działają na CPU |
+| Model | scipy (MLE), statsmodels (GLM Poissona), scikit-learn (kalibracja) | dojrzałe, działają na CPU |
 | Silnik decyzyjny | **Jev** przez `typesafe-sdk` | typowane decyzje z prawdopodobieństwami, szybko i tanio |
 | Embeddingi | `sdadas/mmlw-retrieval-roberta-base` | model wyszukiwawczy dla polskiego, CPU |
 | Baza wektorowa | ChromaDB | lokalna, z filtrowaniem po metadanych |

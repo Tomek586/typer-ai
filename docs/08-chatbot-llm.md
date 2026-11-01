@@ -55,11 +55,11 @@ Każda rozmowa jest logowana: wiadomości, intencja, wywołania narzędzi (nazwa
 | Narzędzie | Argumenty | Zwraca |
 |---|---|---|
 | `znajdz_mecz` | `druzyna_1`, `druzyna_2?`, `data?` | ID meczu, data, godzina, status; rozwiązuje aliasy (np. „Kolejorz”) |
-| `statystyki_druzyny` | `druzyna`, `ostatnie_n=5` | forma, gole, xG, rożne, kartki, Elo, pi-rating, pozycja w tabeli |
+| `statystyki_druzyny` | `druzyna`, `ostatnie_n=5` | forma, gole strzelone i stracone, Elo, pi-rating, pozycja w tabeli, najlepsi strzelcy |
 | `h2h` | `druzyna_1`, `druzyna_2`, `n=5` | ostatnie bezpośrednie mecze |
-| `sklad` | `mecz_id` | skład przewidywany lub oficjalny, wskaźniki siły składu, nieobecni |
+| `sklad` | `mecz_id` | skład przewidywany (newsy, ręczne potwierdzenia) albo po meczu faktyczny (90minut.pl), wskaźniki siły składu, nieobecni |
 | `predykcja` | `mecz_id`, `rynki?` | prawdopodobieństwa, top 3 czynniki (`top_contributions`), etap |
-| `kursy` | `mecz_id`, `rynek?` | kursy (bet365 przez SofaScore), marża, prawdopodobieństwa bez marży, ruch kursu |
+| `kursy` | `mecz_id`, `rynek?` | najlepszy kurs i bukmacher, kurs Pinnacle, marża, prawdopodobieństwa bez marży, ruch kursu |
 | `przelicz_kurs` | `kursy: list[float]`, `metoda=proporcjonalna\|shin` | prawdopodobieństwa, marża |
 | `typy` | `data?`, `status?` | typy wstępne i potwierdzone (format z rozdz. 7.8) |
 | `zbuduj_kupon` | `kurs_docelowy`, `max_zdarzen=3` | kupon, `p_kupon`, `EV_kupon` |
@@ -158,7 +158,7 @@ Mechanizmy deterministyczne (regex, sprawdzanie pól) działają zawsze. Jev jes
 ## 8.7 Pamięć rozmowy
 
 - Ostatnie 10 wymian w kontekście. Starsze są streszczane przez LLM do 5 zdań.
-- „Aktywny mecz” w rozmowie (`mecz_id`) jest zapamiętywany, więc „a co z rożnymi?” odnosi się do ostatnio omawianego meczu.
+- „Aktywny mecz” w rozmowie (`mecz_id`) jest zapamiętywany, więc „a co z golami?” odnosi się do ostatnio omawianego meczu.
 - Brak pamięci między sesjami, poza flagą trybu wsparcia (G1) z czasem ważności 24 h.
 
 ## 8.8 Przykładowa rozmowa (docelowa)
@@ -182,7 +182,7 @@ Mechanizmy deterministyczne (regex, sprawdzanie pól) działają zawsze. Jev jes
 > - pi-rating wyraźnie na korzyść Lecha u siebie,
 > - Legia ma nowego trenera od 4 dni [1].
 >
-> Po ogłoszeniu składów (ok. 16:30) sprawdzę mecz ponownie.
+> Ok. godzinę przed meczem (16:30) sprawdzę mecz ponownie na najnowszych informacjach o składach.
 >
 > ⚠️ To analiza statystyczna, nie gwarancja. Każdy zakład może przegrać.
 >

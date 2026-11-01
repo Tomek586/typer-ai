@@ -9,29 +9,25 @@ flowchart LR
     subgraph R[Ratingi]
         ELO[Elo]
         PI[Pi-ratings]
-        XG[xG-form]
     end
     H[Historia wyników<br/>od 2012/13] --> DC[Dixon-Coles<br/>λ bazowe, ρ]
     H --> ELO & PI
-    S[Statystyki SofaScore] --> XG
-    LU[Skład<br/>przewidywany / oficjalny] --> F[Cechy meczu]
+    LU[Skład<br/>przewidywany: newsy, ręczne<br/>historyczny: 90minut.pl] --> F[Cechy meczu]
     FX[Terminarz, tabela,<br/>derby] --> F
     DC --> GLM[λ-GLM<br/>korekta λ]
     R --> GLM
     F --> GLM
     GLM --> MAT[Macierz wyników<br/>z poprawką ρ]
-    MAT --> MK[Rynki golowe<br/>1X2, DC, OU, BTTS, EH, AH]
-    S --> NB[NB-GLM<br/>rożne, kartki]
-    F --> NB
-    MK & NB --> CAL[Kalibracja Platta<br/>per rodzina rynków]
+    MAT --> MK[Rynki golowe<br/>1X2, DC, OU, BTTS, AH]
+    MK --> CAL[Kalibracja Platta<br/>per rodzina rynków]
     CAL --> BL[Mieszanie z rynkiem<br/>Shin, waga w]
     BL --> OUT[Prawdopodobieństwa<br/>+ wyjaśnienia]
 ```
 
 Pipeline działa w czterech krokach:
 1. **Dixon-Coles** daje bazowe oczekiwane gole `λ` z długiej historii wyników.
-2. **λ-GLM** koryguje `λ` o informacje, których Dixon-Coles nie widzi: ratingi, xG, skład, zmęczenie, motywację.
-3. **Macierz wyników** z poprawionych `λ` daje wszystkie rynki golowe w spójny sposób. Rożne i kartki mają osobne modele NB.
+2. **λ-GLM** koryguje `λ` o informacje, których Dixon-Coles nie widzi: ratingi, skład, zmęczenie, motywację.
+3. **Macierz wyników** z poprawionych `λ` daje wszystkie rynki golowe w spójny sposób.
 4. **Kalibracja** i **mieszanie z rynkiem** poprawiają jakość prawdopodobieństw.
 
 ## 4.2 Ratingi siły drużyn
@@ -59,16 +55,6 @@ Każda drużyna ma **dwa** ratingi: u siebie `R^H` i na wyjeździe `R^A`. Uwzgl�
 - Parametry startowe z publikacji: `λ = 0,035`, `γ = 0,7`. Strojenie na walidacji.
 
 **Cecha:** `pi_diff = ĝ(R_own^{H|A}) − ĝ(R_opp^{A|H})`.
-
-### 4.2.3 xG-form
-
-xG lepiej niż gole oddaje jakość gry, bo w mniejszym stopniu zależy od szczęścia przy wykończeniu.
-
-- `xg_att_form` = wykładniczo ważona średnia xG drużyny (półokres 8 meczów), podzielona przez średnią ligową.
-- `xg_def_form` = to samo dla xG traconego.
-- Drużyna z mniej niż 5 meczami w bazie: wartość ściągana do 1,0 (średnia ligowa) z wagą `n/(n+5)`.
-
-**Cechy:** `xg_att_form_own`, `xg_def_form_opp`.
 
 ## 4.3 Dixon-Coles: bazowe λ
 
@@ -99,7 +85,7 @@ Poprawka `τ` dla niskich wyników:
 
 Dla każdego zawodnika liczymy na chwilę `as_of`, z ostatnich 10 meczów ligowych drużyny:
 - `udzial_minut_i = minuty_i / (90 · liczba_meczów)`,
-- `wklad_atak_i = (xG_i + xA_i) na 90 min` (przy braku xG: gole + asysty),
+- `wklad_atak_i = gole_i na 90 min`, ściągane do średniej dla pozycji zawodnika przy małej liczbie minut: `(gole_i + 2·śr_poz) / (minuty_i/90 + 2)`. Asysty i xG nie są dostępne w darmowych źródłach,
 - **skład referencyjny**: 11 zawodników z największą liczbą minut, z bramkarzem o największej liczbie minut.
 
 Dla danego składu `S` (przewidywanego lub oficjalnego):
@@ -110,11 +96,13 @@ Dla danego składu `S` (przewidywanego lub oficjalnego):
 | `lineup_reg_ratio` | `Σ_{i∈S} udzial_minut_i / Σ_{i∈ref} udzial_minut_i` | 1,0 = grają zawodnicy podstawowi |
 | `gk_backup` | 1, jeśli w bramce nie gra bramkarz referencyjny | |
 
-**Skład oficjalny (etap 2, backtest):** z SofaScore, ok. 60 min przed meczem.
+**Skład oficjalny (trening, backtest, ewaluacja):** z 90minut.pl, dostępny **po** meczu.
+
+**Skład w etapie 2:** oficjalnych składów przed meczem nie pobieramy automatycznie (rozdz. 3.2). Przewidywany skład aktualizują więc newsy z ostatnich godzin (np. artykuły ze składami podanymi przez kluby) i opcjonalne **ręczne potwierdzenie** w aplikacji (`NEWS_FACT.source = manual`).
 
 **Skład przewidywany (etap 1):**
 1. start od składu referencyjnego,
-2. usunięcie zawodników z aktywnymi faktami `status = out` (kontuzja, zawieszenie) z newsów (rozdz. 5) oraz zawodników z listy nieobecnych SofaScore (`missingPlayers`, dostępna przed meczem),
+2. usunięcie zawodników z aktywnymi faktami `status = out` (kontuzja, zawieszenie) z newsów (rozdz. 5) oraz z ręcznych potwierdzeń,
 3. zawodnicy `doubtful` wchodzą do składu z wagą 0,5 (ich wkład liczony w połowie),
 4. w miejsce usuniętego zawodnika wchodzi następny pod względem minut zawodnik **na tej samej pozycji**.
 
@@ -125,7 +113,7 @@ To jest **jedyna droga, którą newsy wpływają na liczby**. Współczynnik prz
 | Cecha | Definicja |
 |---|---|
 | `rest_days` | dni od ostatniego meczu w dowolnych rozgrywkach (obcięte do 10) |
-| `cup_midweek` | 1, jeśli drużyna grała mecz pucharowy w ciągu 4 dni przed meczem |
+| `cup_midweek` | 1, jeśli drużyna grała mecz pucharowy (Puchar Polski, europejskie puchary; terminy z 90minut.pl) w ciągu 4 dni przed meczem |
 | `cup_next` | 1, jeśli ma mecz pucharowy w ciągu 4 dni po meczu (ryzyko rotacji) |
 | `travel_km` | odległość między stadionami / 100, tylko dla gościa |
 
@@ -155,12 +143,12 @@ Wektor `x` (wszystkie cechy standaryzowane):
 
 | Grupa | Cechy |
 |---|---|
-| ratingi | `elo_diff`, `pi_diff`, `xg_att_form_own`, `xg_def_form_opp` |
+| ratingi | `elo_diff`, `pi_diff`, `goals_form_own` (wykładniczo ważona średnia goli, półokres 8 meczów) |
 | skład | `lineup_att_ratio_own`, `lineup_reg_ratio_own`, `lineup_reg_ratio_opp`, `gk_backup_opp` |
 | zmęczenie | `rest_days_own − rest_days_opp`, `cup_midweek_own`, `cup_midweek_opp`, `cup_next_own`, `travel_km` (gość) |
 | motywacja | `releg_pressure_own`, `title_euro_pressure_own`, `nothing_to_play_own`, `nothing_to_play_opp`, `derby` |
 
-- **Estymacja:** `statsmodels` GLM Poisson z regularyzacją L2 (`alpha` strojone) na sezonach z danymi SofaScore (rozdz. 10).
+- **Estymacja:** `statsmodels` GLM Poisson z regularyzacją L2 (`alpha` strojone) na sezonach ze składami z 90minut.pl (rozdz. 10).
 - **Selekcja cech:** cecha zostaje w modelu, jeśli jej usunięcie pogarsza log-loss na walidacji. Wyniki ablacji trafiają do raportu.
 - **Ograniczenie korekty:** `λ_final / λ_DC ∈ [0,75; 1,33]`, co chroni przed skrajnymi wartościami cech.
 - **Wyjaśnialność:** składniki `β_k · x_k` zapisujemy w `PREDICTION.features`. Chatbot pokazuje 3 największe jako odpowiedź na pytanie „co wpłynęło na predykcję” (np. „brak Ishaka obniża oczekiwane gole Lecha o 7%”).
@@ -175,7 +163,6 @@ Z `λ_h`, `λ_a` (po korekcie) i `ρ` liczymy macierz `P[i, j]` dla `i, j ∈ 0.
 | `DC:1X / X2 / 12` | sumy odpowiednich prawdopodobieństw 1X2 |
 | `OU:L:over` | `Σ_{i+j>L} P` (linie połówkowe) |
 | `BTTS:yes` | `Σ_{i≥1, j≥1} P` |
-| `EH:h:1 / X / 2` | `Σ_{i−j+h>0} P`, `Σ_{i−j+h=0} P`, `Σ_{i−j+h<0} P` |
 | `AH:L:home` | rozkład różnicy goli `d = i − j`; zamiast prawdopodobieństwa liczymy **oczekiwany zwrot** (4.6.1) |
 
 ### 4.6.1 Handicap azjatycki
@@ -192,27 +179,13 @@ Dla linii `L` i kursu `o`, wynik zakładu na gospodarza przy różnicy goli `d`:
 - `EV(AH) = Σ_d P(d) · zysk(d, L, o)`.
 - Do reguły „p ≥ próg” używamy **prawdopodobieństwa nieprzegrania** (wygrana + połowa zwrotów), opisanego w rozdz. 7.
 
-## 4.7 Rynki statystyczne: rożne i kartki
+## 4.7 Rynki statystyczne (poza zakresem)
 
-Rożne i kartki mają większą wariancję niż rozkład Poissona, dlatego używamy **ujemnego rozkładu dwumianowego (NB2)**:
-
-```
-y_own ~ NB(μ, α),  Var = μ + α·μ²
-log μ = β0 + β_home·is_home + log(form_for_own) + log(form_against_opp) + β·x
-```
-
-| Model | `form_for` / `form_against` | dodatkowe `x` |
-|---|---|---|
-| **Rożne** (`CRN`) | wykładniczo ważona średnia rożnych wywalczonych / oddanych (półokres 8 meczów, shrinkage do średniej ligowej) | `elo_diff` (faworyt częściej atakuje), `xg_att_form_own` |
-| **Kartki** (`CRD`) | średnia kartek otrzymanych / „prowokowanych” u rywali | `referee_rate`, `derby`, `|elo_diff|` (wyrównane mecze), `releg_pressure` obu drużyn |
-
-- `referee_rate` = średnia kartek w meczach sędziego, z shrinkage do średniej ligowej: `(n·śr_sędziego + 10·śr_ligi) / (n + 10)`.
-- **Suma meczu:** rozkład sumy liczymy jako splot rozkładów obu drużyn (numerycznie, do 30 zdarzeń). Zakładamy niezależność, a na walidacji sprawdzamy korelację reszt. Przy istotnej korelacji (|r| > 0,15) przechodzimy na symulację z korelacją.
-- **Estymacja:** `statsmodels` NegativeBinomial na sezonach SofaScore.
+Rożne i kartki były w pierwotnym planie. Odpadły, bo żadne darmowe źródło nie podaje na nie kursów ani bieżących statystyk (rozdz. 3.2). Model goli nie wymaga tych danych, a architektura pozwala dodać takie rynki później (model ujemny dwumianowy na liczbę zdarzeń).
 
 ## 4.8 Kalibracja
 
-Kalibracja **Platta per rodzina rynków** (`1X2`, `DC`, `OU`, `BTTS`, `EH`, `AH`, `CRN`, `CRD`):
+Kalibracja **Platta per rodzina rynków** (`1X2`, `DC`, `OU`, `BTTS`, `AH`):
 
 ```
 p_cal = σ(a · logit(p) + b)
@@ -231,7 +204,7 @@ Kurs bukmachera zawiera informacje, których model nie ma, np. nieopublikowane n
 p_final = σ( w · logit(p_cal) + (1 − w) · logit(p_rynek) )
 ```
 
-- `p_rynek` to prawdopodobieństwo z kursów bet365 (SofaScore) po usunięciu marży **metodą Shina** (rozdz. 7.1).
+- `p_rynek` to prawdopodobieństwo z kursów Pinnacle (a gdy ich brak, z mediany kursów bukmacherów) z The Odds API po usunięciu marży **metodą Shina** (rozdz. 7.1).
 - `w ∈ [0, 1]` dobieramy per rodzina rynków na walidacji (siatka co 0,05), minimalizując log-loss.
 - `w = 1` oznacza brak mieszania, a `w = 0` ślepe kopiowanie rynku. Typowo optymalne `w` wychodzi poniżej 0,5, a typ powstaje tylko tam, gdzie model **wyraźnie** nie zgadza się z rynkiem.
 - **Ograniczenie backtestu:** dla historii są tylko kursy zamknięcia (`POL.csv`), niedostępne w momencie decyzji. Backtest raportujemy więc w dwóch wariantach: bez mieszania (wynik „czysty”) i z mieszaniem na kursach zamknięcia (górne oszacowanie, wyraźnie oznaczone).
@@ -244,7 +217,6 @@ p_final = σ( w · logit(p_cal) + (1 − w) · logit(p_rynek) )
 | pi-ratings `λ`, `γ` | {0,025; 0,035; 0,045} × {0,5; 0,7; 0,9} | j.w. |
 | Dixon-Coles `ξ` | 4 wartości | log-loss wyników dokładnych |
 | λ-GLM `alpha`, zestaw cech | 5 wartości + ablacja grup | log-loss 1X2 + OU 2.5 |
-| NB `alpha_reg` | 5 wartości | log-loss rynków CRN i CRD |
 | mieszanie `w` | 0–1 co 0,05 | log-loss per rodzina |
 
 - **Zasada:** modele wybieramy po **log-loss**, a nie po trafności ani ROI. Wybór po ROI na walidacji to prosta droga do przeuczenia.
@@ -259,13 +231,12 @@ p_final = σ( w · logit(p_cal) + (1 − w) · logit(p_rynek) )
 {
   "match_id": 18234,
   "stage": 1,
-  "model_version": "dc0.4-glm0.3-nb0.2-cal0.2-blend0.1",
+  "model_version": "dc0.4-glm0.3-cal0.2-blend0.1",
   "as_of": "2026-11-08T09:00:00+01:00",
   "lambda": {"home": 1.62, "away": 1.08, "rho": -0.07},
   "probabilities": {
     "1X2:1": 0.497, "1X2:X": 0.262, "1X2:2": 0.241,
-    "OU:2.5:over": 0.512, "BTTS:yes": 0.548,
-    "CRN:9.5:over": 0.471, "CRD:4.5:over": 0.556
+    "OU:2.5:over": 0.512, "BTTS:yes": 0.548
   },
   "lineup": {"home": {"type": "expected", "att_ratio": 0.93, "reg_ratio": 0.95},
              "away": {"type": "expected", "att_ratio": 1.00, "reg_ratio": 0.98}},
@@ -281,4 +252,4 @@ Liczby w przykładzie są ilustracyjne. Wyjście trafia do tabeli `PREDICTION` i
 
 ## 4.12 Wersjonowanie
 
-`model_version` składa się z wersji wszystkich komponentów, np. `dc0.4-glm0.3-nb0.2-cal0.2-blend0.1`. Każda zmiana kodu modelu podnosi wersję komponentu. W raportach typy grupujemy według wersji, żeby nie mieszać wyników różnych modeli.
+`model_version` składa się z wersji wszystkich komponentów, np. `dc0.4-glm0.3-cal0.2-blend0.1`. Każda zmiana kodu modelu podnosi wersję komponentu. W raportach typy grupujemy według wersji, żeby nie mieszać wyników różnych modeli.

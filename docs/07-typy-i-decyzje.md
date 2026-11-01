@@ -34,7 +34,7 @@ Dla handicapu azjatyckiego EV liczymy z rozkładu różnicy goli (rozdz. 4.6.1).
 p_AH = P(wygrana) + P(połowa wygranej) + ½ · P(zwrot)
 ```
 
-**Kurs do decyzji:** zawsze **kurs bet365 pobrany z SofaScore** z ostatniego snapshotu, nie starszego niż 2 h (etap 1) lub 15 min (etap 2). Jeśli dla rynku nie ma kursu, typu nie ma. Dotyczy to zawsze **kartek** (`CRD`): model liczy dla nich prawdopodobieństwa, ale typów się nie wydaje. Kursy SofaScore służą tylko do informacji i porównań.
+**Kurs do decyzji:** **najlepszy kurs** danego zdarzenia spośród bukmacherów z ostatniego snapshotu The Odds API, nie starszego niż 2 h (etap 1) lub 15 min (etap 2), z odrzuceniem kursów odstających o więcej niż 8% od mediany (rozdz. 3.3.4). Jeśli dla rynku nie ma kursu, typu nie ma. Zapisujemy też bukmachera, u którego kurs był najlepszy.
 
 ## 7.3 Reguły wyboru typów
 
@@ -87,11 +87,11 @@ stateDiagram-v2
 - **Znaczenie dla użytkownika:** „model widzi wartość, ale czekamy na składy”. Kto chce, może zawrzeć zakład wcześniej po lepszym kursie, świadomie ponosząc ryzyko składu.
 
 ### Etap 2: potwierdzenie
-- **Kiedy:** ok. 60 min przed meczem, po pobraniu oficjalnych składów (zadanie `stage2_watch` co 10 min sprawdza, czy składy są dostępne; najpóźniej T-30).
-- **Wejście:** predykcja `stage=2` (skład oficjalny), kursy z ostatnich 15 min, wynik etapu 1, ruch kursu.
+- **Kiedy:** ok. 60 min przed meczem (zadanie `stage2_watch` co 10 min wybiera mecze zaczynające się za 50–70 min). Wcześniej pobierane są najnowsze newsy, a użytkownik dostaje na Telegram prośbę o opcjonalne ręczne potwierdzenie nieobecności (np. po sprawdzeniu składu ogłoszonego przez klub).
+- **Wejście:** predykcja `stage=2` (skład przewidywany z najnowszych newsów i ręcznych potwierdzeń), kursy z ostatnich 15 min, wynik etapu 1, ruch kursu.
 - **Dla typu `WSTEPNY` lub `WSTRZYMANY`:** ponowne sprawdzenie reguł R1–R7 na nowych liczbach, potem bramka Jev. Typ staje się `POTWIERDZONY` albo `ANULOWANY`.
 - **Nowi kandydaci** (np. dopiero skład pokazał wartość): mogą dostać status `POTWIERDZONY_POZNO`, oznaczany osobno w raportach.
-- **Brak składów do T-30:** typ jest anulowany (reguła „brak informacji = brak typu”).
+- **Niepewność składu:** jeśli bramka Jev uzna informacje o składzie za niepotwierdzone (`uncertainty ≥ 0,60`), typ jest anulowany (reguła „brak informacji = brak typu”).
 
 ### Typ oficjalny
 
@@ -129,7 +129,7 @@ Kupon (AKO) to iloczyn kursów, ale też **iloczyn marż**, więc ryzyko szybko 
 ## 7.7 Rozliczanie
 
 Po meczu zadanie `settle`:
-1. pobiera wynik i statystyki (SofaScore),
+1. pobiera wynik (football-data) i skład z minutami (90minut.pl),
 2. dla każdego typu wywołuje `settle(market, result) → Outcome` (rozdz. 3.3),
 3. liczy zysk:
 
@@ -142,7 +142,7 @@ Po meczu zadanie `settle`:
 | `LOSS` | −1 |
 
 4. zapisuje kurs zamknięcia (ostatni snapshot przed meczem) do obliczenia CLV,
-5. aktualizuje ratingi (Elo, pi, xG-form) i statystyki zawodników,
+5. aktualizuje ratingi (Elo, pi) i ważność zawodników,
 6. weryfikuje fakty z newsów względem składu (rozdz. 5.5),
 7. wysyła podsumowanie dnia na Telegram.
 
@@ -158,12 +158,12 @@ Mecz przełożony lub przerwany rozliczamy według typowych zasad bukmacherskich
   "market": "1X2:1",
   "label": "Wygrana Lecha",
   "odds": 2.15,
-  "bookmaker": "bet365 (SofaScore)",
+  "bookmaker": "betclic (najlepszy kurs z 18)",
   "p_model": 0.531,
   "p_market": 0.447,
   "ev": 0.142,
   "kelly_info_pct": 1.2,
-  "reasons": ["pi_diff +0,05 do λ gospodarzy", "Legia bez 2 podstawowych obrońców (skład oficjalny)"],
+  "reasons": ["pi_diff +0,05 do λ gospodarzy", "Legia bez 2 podstawowych obrońców (newsy + ręczne potwierdzenie)"],
   "gate": {"decision": "issue", "context_risk": 0.8, "contradiction": 0.12},
   "risk_note": "Model daje ok. 53% szans – typ przegra mniej więcej w 47 na 100 podobnych przypadków."
 }
