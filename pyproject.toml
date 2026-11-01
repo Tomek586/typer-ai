@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "typerai"
+version = "0.1.0"
+description = "Typer AI – chatbot LLM z RAG i modelem decyzyjnym Jev do analizy meczów Ekstraklasy"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "playwright>=1.48",
+    "python-dotenv>=1.0",
+    "rapidfuzz>=3.0",
+    "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.setuptools.packages.find]
+include = ["typerai*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

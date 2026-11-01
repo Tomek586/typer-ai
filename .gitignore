@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Sekrety
+.env
+
+# Dane (pobierane skryptami, nie trzymamy w repo)
+data/raw/
+data/*.db
+data/*.db-*
+data/chroma/
+
+# Edytory / system
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
