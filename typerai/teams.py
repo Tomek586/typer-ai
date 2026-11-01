@@ -13,7 +13,7 @@ from rapidfuzz import fuzz, process
 # id: (nazwa kanoniczna, [aliasy])
 TEAMS: dict[str, tuple[str, list[str]]] = {
     "arka-gdynia": ("Arka Gdynia", []),
-    "cracovia": ("Cracovia", ["KS Cracovia"]),
+    "cracovia": ("Cracovia", ["KS Cracovia", "Cracovia Kraków"]),
     "gks-belchatow": ("GKS Bełchatów", []),
     "gks-katowice": ("GKS Katowice", []),
     "gornik-zabrze": ("Górnik Zabrze", ["Gornik Z."]),

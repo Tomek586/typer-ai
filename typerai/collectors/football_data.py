@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from typerai import config, db, teams
+from typerai.matches import find_match
 
 RAW_DIR = config.RAW_DIR / "football_data"
 LATEST = RAW_DIR / "POL.csv"
@@ -100,22 +101,23 @@ def parse(path: Path) -> list[FdMatch]:
 
 
 def import_matches(conn: sqlite3.Connection, matches: list[FdMatch]) -> dict[str, int]:
-    """Wstawia mecze (upsert po parze drużyn i godzinie meczu) i kursy zamknięcia (tylko nowe)."""
+    """Wstawia lub uzupełnia mecze (dopasowanie: para drużyn ±48 h) i kursy zamknięcia (tylko nowe)."""
     stats = {"matches": 0, "odds": 0}
     for m in matches:
         status = "finished" if m.hg is not None else "scheduled"
-        conn.execute(
-            """INSERT INTO match (season, competition, kickoff_utc, home_id, away_id, hg, ag, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(competition, home_id, away_id, kickoff_utc) DO UPDATE SET
-                   season = excluded.season, hg = excluded.hg, ag = excluded.ag,
-                   status = excluded.status""",
-            (m.season, config.LEAGUE, m.kickoff_utc, m.home_id, m.away_id, m.hg, m.ag, status),
-        )
-        match_id = conn.execute(
-            "SELECT id FROM match WHERE competition = ? AND home_id = ? AND away_id = ? AND kickoff_utc = ?",
-            (config.LEAGUE, m.home_id, m.away_id, m.kickoff_utc),
-        ).fetchone()[0]
+        match_id = find_match(conn, m.home_id, m.away_id, m.kickoff_utc)
+        if match_id is None:
+            match_id = conn.execute(
+                """INSERT INTO match (season, competition, kickoff_utc, home_id, away_id, hg, ag, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (m.season, config.LEAGUE, m.kickoff_utc, m.home_id, m.away_id, m.hg, m.ag, status),
+            ).lastrowid
+        else:
+            # Mecz mógł już przyjść z innego źródła (np. jako zaplanowany) – uzupełniamy wynik
+            conn.execute(
+                "UPDATE match SET season = ?, hg = ?, ag = ?, status = ? WHERE id = ?",
+                (m.season, m.hg, m.ag, status, match_id),
+            )
         stats["matches"] += 1
         for bookmaker, quotes in m.odds.items():
             for market, price in quotes.items():
