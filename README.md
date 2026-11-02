@@ -61,6 +61,7 @@ cp .env.example .env          # uzupełnij klucze
 .venv/Scripts/python -m typerai.pipeline stage1               # kursy + typy wstępne
 .venv/Scripts/python -m typerai.pipeline picks                # lista typów i wynik
 .venv/Scripts/python -m typerai.scheduler                     # harmonogram: etap 1, etap 2, rozliczenia
+scripts/setup_scheduler.bat                                   # harmonogram jako zadanie Windows (start przy logowaniu)
 .venv/Scripts/python -m pytest                                # testy
 ```
 

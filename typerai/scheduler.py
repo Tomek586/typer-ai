@@ -4,12 +4,13 @@ Proces działa w tle i co minutę sprawdza, czy któreś zadanie powinno się wy
 Godziny podane są w czasie polskim. Każde uruchomienie zapisuje się w tabeli JOB_RUN.
 """
 
+import sys
 import time
 import traceback
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
-from typerai import db
+from typerai import config, db
 from typerai.pipeline import cmd_settle, cmd_stage1, cmd_stage2
 
 TZ = ZoneInfo("Europe/Warsaw")
@@ -54,8 +55,16 @@ def due(name: str, local: datetime) -> bool:
     return local.minute % job["every_min"] == 0
 
 
+def _log_to_file_without_console() -> None:
+    """Uruchomiony przez pythonw.exe (Harmonogram zadań Windows) nie ma konsoli – piszemy do pliku."""
+    if sys.stdout is None or sys.stderr is None:
+        log = open(config.DATA_DIR / "scheduler.log", "a", encoding="utf-8", buffering=1)
+        sys.stdout = sys.stderr = log
+
+
 def main() -> None:
-    print(f"Harmonogram Typer AI uruchomiony: {JOBS}")
+    _log_to_file_without_console()
+    print(f"[{datetime.now(TZ):%Y-%m-%d %H:%M}] Harmonogram Typer AI uruchomiony: {JOBS}", flush=True)
     last_minute = None
     while True:
         local = datetime.now(TZ).replace(second=0, microsecond=0)
