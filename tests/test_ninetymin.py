@@ -57,3 +57,24 @@ def test_save_report_links_existing_match(tmp_path):
     assert conn.execute("SELECT COUNT(*) FROM lineup WHERE match_id = ?", (match_id,)).fetchone()[0] == 32
     assert conn.execute("SELECT position FROM player WHERE name = 'Mateusz Lis'").fetchone()[0] == "G"
     assert tuple(conn.execute("SELECT yellow_h, yellow_a FROM match_stats").fetchone()) == (1, 2)
+
+
+def test_client_retries_after_network_error(tmp_path, monkeypatch):
+    import httpx
+
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise httpx.ConnectError("getaddrinfo failed")
+        if calls["n"] == 2:
+            return httpx.Response(503)
+        return httpx.Response(200, content="<html>ok</html>".encode("iso-8859-2"))
+
+    monkeypatch.setattr(ninetymin, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(ninetymin, "RETRY_PAUSES", [0, 0, 0])
+    client = ninetymin.NinetyMin(delay=0)
+    client._client = httpx.Client(base_url=ninetymin.BASE_URL, transport=httpx.MockTransport(handler))
+    assert client.get("/x", "x.html") == "<html>ok</html>"
+    assert calls["n"] == 3

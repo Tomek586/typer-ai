@@ -27,6 +27,7 @@ BASE_URL = "http://www.90minut.pl"
 RAW_DIR = config.RAW_DIR / "90minut"
 USER_AGENT = "TyperAI-student-project (kontakt: tomasz.dziedzic586@gmail.com)"
 DELAY_SECONDS = 4.0
+RETRY_PAUSES = [10, 30, 60, 120, 300, 600]
 
 # Numery sezonów w archiwum 90minut.pl rosną o 2 co sezon (2026/27 = 109, 2025/26 = 107, ...)
 ARCHIVE_ID_2026 = 109
@@ -104,14 +105,29 @@ class NinetyMin:
         wait = self._delay - (time.monotonic() - self._last_request)
         if wait > 0:
             time.sleep(wait)
-        resp = self._client.get(path)
-        self._last_request = time.monotonic()
-        self.requests += 1
-        resp.raise_for_status()
+        resp = self._get_with_retry(path)
         html = resp.content.decode("iso-8859-2", errors="replace")
         RAW_DIR.mkdir(parents=True, exist_ok=True)
         cached.write_text(html, encoding="utf-8")
         return html
+
+    def _get_with_retry(self, path: str) -> httpx.Response:
+        """Ponawia zapytanie przy błędzie sieci lub serwera z rosnącym odstępem (zanik sieci, uśpienie komputera)."""
+        for attempt, pause in enumerate(RETRY_PAUSES + [None]):
+            try:
+                resp = self._client.get(path)
+                self._last_request = time.monotonic()
+                self.requests += 1
+                if resp.status_code < 500:
+                    resp.raise_for_status()
+                    return resp
+                error = f"HTTP {resp.status_code}"
+            except httpx.TransportError as e:
+                error = repr(e)
+            if pause is None:
+                raise RuntimeError(f"90minut.pl niedostępny po {attempt + 1} próbach: {error}")
+            print(f"  błąd ({error}), ponowienie za {pause} s", flush=True)
+            time.sleep(pause)
 
     def season_page(self, season: str, refresh: bool = False) -> str:
         start = int(season[:4])
