@@ -130,7 +130,7 @@ def analiza_meczu(gospodarz: str, gosc: str) -> dict:
     return {
         "mecz": f"{_team_name(conn, home_id)} – {_team_name(conn, away_id)}",
         "termin": _local(match["kickoff_utc"]),
-        "oczekiwane_gole": {"gospodarz": round(lh, 2), "gosc": round(la, 2)},
+        "oczekiwane_gole_modelu": {"gospodarz": round(lh, 2), "gosc": round(la, 2)},
         "rynki": rynki,
         "typ": None if best_pick is None else {
             "zdarzenie": best_pick.market, "kurs": best_pick.odds, "bukmacher": best_pick.bookmaker,

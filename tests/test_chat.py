@@ -12,7 +12,7 @@ def test_tools_keep_signatures_for_function_calling():
 
 
 def test_guard_output_removes_guarantees_and_adds_risk():
-    out = cli.guard_output("To pewniak, gwarancja wygranej!")
+    out = cli.guard_output("To pewniak na kurs 2,0, gwarancja wygranej!")
     answer, note = out.split(cli.RISK_NOTE.strip()[:2], 1)
     assert "pewniak" not in answer.lower() and "gwarancja" not in answer.lower()
     assert out.endswith(cli.RISK_NOTE)
@@ -26,3 +26,8 @@ def test_harm_signals():
 def test_przelicz_kurs():
     r = tools.przelicz_kurs([2.0, 2.0])
     assert r["marza"] == 0 and r["bez_marzy_shin"] == [0.5, 0.5]
+
+
+def test_risk_note_only_for_betting_answers():
+    assert cli.guard_output("Dziś grają trzy mecze.") == "Dziś grają trzy mecze."
+    assert cli.guard_output("Najlepszy kurs to 2,0.").endswith(cli.RISK_NOTE)
