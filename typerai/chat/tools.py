@@ -9,12 +9,20 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from typerai import config, db, teams
+from typerai.analysis import trends
 from typerai.betting import odds_math, value
 from typerai.model import predict as model_predict
 from typerai.model.score_matrix import market_probs, matrix
 
 TZ = ZoneInfo("Europe/Warsaw")
 _model_cache: dict[str, object] = {}
+
+MARKETS = [
+    ("1X2:1", "wygrana gospodarza"), ("1X2:X", "remis"), ("1X2:2", "wygrana gościa"),
+    ("DC:1X", "gospodarz lub remis"), ("DC:X2", "remis lub gość"), ("DC:12", "bez remisu"),
+    ("OU:1.5:over", "powyżej 1,5 gola"), ("OU:2.5:over", "powyżej 2,5 gola"), ("OU:2.5:under", "poniżej 2,5 gola"),
+    ("OU:3.5:under", "poniżej 3,5 gola"), ("BTTS:yes", "obie drużyny strzelą"), ("BTTS:no", "nie obie strzelą"),
+]
 
 
 def _conn():
@@ -91,7 +99,8 @@ def forma_druzyny(druzyna: str, ostatnie: int = 5) -> dict:
 
 
 def analiza_meczu(gospodarz: str, gosc: str) -> dict:
-    """Analiza nadchodzącego meczu: prawdopodobieństwa modelu i rynku, najlepsze kursy, EV i czy jest typ.
+    """Analiza nadchodzącego meczu: prawdopodobieństwa, najlepsze kursy, EV, kurs minimalny,
+    trendy (H2H z 4 ostatnich meczów, forma z 3 ostatnich, co się powtarza) i czy jest oficjalny typ.
 
     Args:
         gospodarz: drużyna grająca u siebie, np. "Legia Warszawa"
@@ -113,30 +122,36 @@ def analiza_meczu(gospodarz: str, gosc: str) -> dict:
     mat = matrix(lh, la, model.rho)
     quotes = value.latest_quotes(conn, match["id"], as_of, 24 * 60)
 
-    rynki = {}
-    for code, label in (("1X2:1", "wygrana gospodarza"), ("1X2:X", "remis"), ("1X2:2", "wygrana gościa"),
-                        ("OU:2.5:over", "powyżej 2,5 gola"), ("OU:2.5:under", "poniżej 2,5 gola")):
+    rynki = []
+    for code, label in MARKETS:
+        p_model = market_probs(mat, code).win
+        probs = value._final_probability(code, mat, quotes, config.MODEL["blend_w"]) if quotes else None
+        p, zrodlo = (probs[0], "model + rynek (Pinnacle)") if probs else (p_model, "tylko model – brak kursów rynku")
+        kurs_min = value.minimum_odds(p)
         best = value.best_price(quotes.get(code, []))
-        probs = value._final_probability(code, mat, quotes, config.MODEL["blend_w"]) if quotes.get(code) else None
-        entry = {"zdarzenie": label, "p_model": round(market_probs(mat, code).win, 3)}
-        if probs and best:
-            p, _, p_market = probs
-            entry.update({"p_rynek_pinnacle": round(p_market, 3), "p_koncowe": round(p, 3),
-                          "najlepszy_kurs": best.odds, "bukmacher": best.bookmaker,
-                          "ev": round(odds_math.expected_value(p, best.odds), 3)})
-        rynki[code] = entry
-    cands = value.candidates(mat, quotes)
-    best_pick = value.choose(cands)
+        if best is None:
+            ocena = f"brak naszego kursu – warto tylko przy kursie co najmniej {kurs_min} u Twojego bukmachera"
+        elif best.odds >= kurs_min:
+            ocena = f"kurs {best.odds} ({best.bookmaker}) jest powyżej minimalnego {kurs_min} – jest wartość"
+        else:
+            ocena = f"najlepszy kurs {best.odds} ({best.bookmaker}) jest poniżej minimalnego {kurs_min} – brak wartości"
+        rynki.append({
+            "zdarzenie": label, "p": round(p, 3), "p_model": round(p_model, 3), "zrodlo_p": zrodlo,
+            "kurs_minimalny": kurs_min, "najlepszy_kurs": best.odds if best else None,
+            "ev": round(odds_math.expected_value(p, best.odds), 3) if best else None, "ocena": ocena,
+        })
+    best_pick = value.choose(value.candidates(mat, quotes))
     return {
         "mecz": f"{_team_name(conn, home_id)} – {_team_name(conn, away_id)}",
         "termin": _local(match["kickoff_utc"]),
         "oczekiwane_gole_modelu": {"gospodarz": round(lh, 2), "gosc": round(la, 2)},
         "rynki": rynki,
+        "trendy": trends.match_trends(conn, home_id, away_id, match["kickoff_utc"]),
         "typ": None if best_pick is None else {
             "zdarzenie": best_pick.market, "kurs": best_pick.odds, "bukmacher": best_pick.bookmaker,
             "p": round(best_pick.p, 3), "ev": round(best_pick.ev, 3)},
-        "reguly": f"typ tylko gdy p ≥ {config.RULES['p_min']}, EV ≥ {config.RULES['ev_min']:.0%}, "
-                  f"kurs {config.RULES['odds_min']}–{config.RULES['odds_max']}",
+        "reguly_typu": f"oficjalny typ tylko gdy p ≥ {config.RULES['p_min']}, EV ≥ {config.RULES['ev_min']:.0%}, "
+                       f"kurs {config.RULES['odds_min']}–{config.RULES['odds_max']}",
     }
 
 

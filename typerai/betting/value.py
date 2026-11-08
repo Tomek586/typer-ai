@@ -154,3 +154,12 @@ def candidates(matrix: np.ndarray, quotes: dict[str, list[Quote]], w: float | No
 def choose(cands: list[Candidate]) -> Candidate | None:
     """Jeden typ na mecz: najwyższe EV·p, przy remisie wyższe p (docs/07, 7.3)."""
     return max(cands, key=lambda c: (c.ev * c.p, c.p), default=None)
+
+
+def minimum_odds(p: float, ev_min: float | None = None) -> float:
+    """Najniższy kurs, przy którym zakład ma EV ≥ ev_min: (1 + ev_min) / p.
+
+    Pozwala ocenić zakład, na który nie mamy kursu – użytkownik porównuje go z ofertą swojego bukmachera.
+    """
+    ev_min = config.RULES["ev_min"] if ev_min is None else ev_min
+    return round((1 + ev_min) / p, 2)
