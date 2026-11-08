@@ -81,7 +81,7 @@ Licznik pozostałych kredytów (`x-requests-remaining`) jest logowany przy każd
 - **Zawodnicy** mają w serwisie stałe ID (`wystepy.php?id=…`), które przyjmujemy jako `PLAYER.id`, więc nie trzeba dopasowywać nazwisk między meczami.
 - **Pozycja** wynika z kolejności w składzie (serwis wypisuje: bramkarz, obrońcy, pomocnicy, napastnicy): wiersz 1 = G, 2–5 = D, 6–9 = M, 10–11 = F. Pozycja zawodnika to najczęstsza wartość z jego występów w wyjściowym składzie.
 - **Gole samobójcze** (ikona `own.gif`, dopisek „(s)”) nie są przypisywane zawodnikom. Kontrola jakości: suma goli zawodników i samobójczych musi się zgadzać z wynikiem meczu.
-- **Zasady pobierania:** jedna strona na 3–5 s, każda relacja pobierana raz (cache surowego HTML w `data/raw/90minut/`), identyfikujący User-Agent z adresem kontaktowym. **Redakcja 90minut.pl wyraziła zgodę** na pobieranie danych do projektu (1.11.2026).
+- **Zasady pobierania:** jedna strona na 3–5 s, każda relacja pobierana raz (cache surowego HTML w `data/raw/90minut/`), identyfikujący User-Agent z nazwą projektu. **Redakcja 90minut.pl wyraziła zgodę** na pobieranie danych do projektu (1.11.2026).
 - **Dopasowanie do meczów:** data i para drużyn przez aliasy (`matches.find_match`).
 - **Kodowanie:** strony są w ISO-8859-2, więc konwertujemy je do UTF-8 przed parsowaniem.
 

@@ -25,7 +25,7 @@ from typerai.matches import find_match
 
 BASE_URL = "http://www.90minut.pl"
 RAW_DIR = config.RAW_DIR / "90minut"
-USER_AGENT = "TyperAI-student-project (kontakt: tomasz.dziedzic586@gmail.com)"
+USER_AGENT = "TyperAI-student-project"
 DELAY_SECONDS = 4.0
 RETRY_PAUSES = [10, 30, 60, 120, 300, 600]
 
