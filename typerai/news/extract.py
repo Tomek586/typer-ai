@@ -191,7 +191,12 @@ def process(conn: sqlite3.Connection, engine: DecisionEngine, limit: int = 10) -
         team_names = {t: names.get(t, t) for t in mentioned}
         squads = {t: squad(conn, t, published) for t in mentioned}
         state = {"title": title, "text": text[:TEXT_CHARS], "source": source, "published_at": published}
-        answers = engine.ask("news_classify", state, build_questions(team_names, squads), ref=("article", article_id))
+        try:
+            answers = engine.ask("news_classify", state, build_questions(team_names, squads), ref=("article", article_id))
+        except Exception as e:   # np. wszystkie modele przeciążone (503): kończymy przebieg, artykuł wróci w następnym
+            stats["artykulow"] -= 1
+            stats["przerwano"] = f"{type(e).__name__}: {str(e)[:80]}"
+            break
         if getattr(engine, "log", None) is None:     # silnik bez DECISION_LOG – oznaczamy artykuł sami
             _mark(conn, article_id, "classified")
         for fact in interpret(answers, team_names, squads):

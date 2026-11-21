@@ -131,3 +131,17 @@ def test_process_classifies_once_and_confirms_duplicates(conn):
     assert e.calls == [("article", 1)]                                  # duplikat i artykuł bez drużyny bez zapytania
     assert conn.execute("SELECT certainty FROM news_fact").fetchone()[0] == "reported"   # podniesione przez duplikat
     assert extract.process(conn, e, limit=10)["artykulow"] == 0          # każdy artykuł tylko raz
+
+
+class OverloadedEngine:
+    log = None
+
+    def ask(self, *args, **kwargs):
+        raise RuntimeError("503 UNAVAILABLE")
+
+
+def test_process_stops_quietly_when_engine_is_unavailable(conn):
+    conn.execute("UPDATE news_article SET title = 'Lech: trener do zwolnienia?'")
+    stats = extract.process(conn, OverloadedEngine(), limit=10)
+    assert stats["artykulow"] == 0 and "503" in stats["przerwano"]
+    assert len(extract.pending(conn, 10)) == 2                         # artykuły czekają na następny przebieg
