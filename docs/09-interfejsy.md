@@ -4,7 +4,9 @@ Oba interfejsy korzystają z tego samego potoku czatu (`typerai/chat/`) i tych s
 
 ## 9.1 Aplikacja Streamlit
 
-Uruchomienie: `streamlit run typerai/apps/streamlit_app.py`
+Uruchomienie: `streamlit run typerai/apps/streamlit_app.py` (zależności: `pip install -e ".[app]"`)
+
+**Stan (21.11.2026):** gotowe strony **Czat**, **Typy** i **Wyniki** (pierwsza wersja). Strona „Typy” ma dodatkowo tabelę „dlaczego jest albo nie ma typu” dla najbliższych meczów (model, rynek, mieszanka, najlepszy kurs, EV). Aplikacja czyta bazę wyłącznie w trybie read-only (`typerai/report.py`).
 
 | Strona | Zawartość | Dla kogo |
 |---|---|---|
