@@ -20,6 +20,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+app = ["streamlit>=1.40", "pandas>=2.2"]
+notebook = ["jupyter>=1.0", "matplotlib>=3.8", "pandas>=2.2"]
 
 [tool.setuptools.packages.find]
 include = ["typerai*"]

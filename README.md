@@ -67,6 +67,14 @@ scripts/setup_scheduler.bat                                   # harmonogram jako
 .venv/Scripts/python -m pytest                                # testy
 ```
 
+Aplikacja webowa i notebook z postępem prac (tylko odczyt bazy, działają też na kopii):
+
+```bash
+.venv/Scripts/python -m pip install -e ".[app,notebook]"
+.venv/Scripts/streamlit run typerai/apps/streamlit_app.py     # Czat, Typy, Wyniki -> http://localhost:8501
+.venv/Scripts/jupyter notebook notebooks/postep_po_PoC.ipynb  # prezentacja postępu (22.11.2026)
+```
+
 ## Zastrzeżenie
 
 Projekt ma charakter edukacyjny i badawczy. Typer AI nie gwarantuje wygranych i nie zachęca do hazardu. Testy prowadzone są wyłącznie na wirtualnych stawkach. Zakłady bukmacherskie są dozwolone od 18 lat i mogą uzależniać.

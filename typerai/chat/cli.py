@@ -70,6 +70,16 @@ SUPPORT = ("Widzę, że sytuacja może być trudna. Nie podam teraz typów – w
 
 # Wyniki narzędzi z bieżącej tury – podstawa sprawdzania liczb w odpowiedzi (guardrail G5)
 TOOL_LOG: list = []
+# Przebieg bieżącej tury dla panelu „Jak powstała odpowiedź” w aplikacji (docs/09): wywołania narzędzi,
+# przełączenia modeli i wynik kontroli liczb. Stan modułu – aplikacja obsługuje jedną rozmowę naraz.
+TRACE: list[dict] = []
+LAST_CHECK: dict = {}
+ECHO = True  # wypisywanie przebiegu w terminalu; aplikacja Streamlit wyłącza
+
+
+def _say(message: str) -> None:
+    if ECHO:
+        print(message, flush=True)
 
 CORRECTION = ("Twoja odpowiedź zawiera liczby, których nie ma w wynikach narzędzi: {nums}. "
               "Odpowiedz ponownie na to samo pytanie. Najpierw wywołaj potrzebne narzędzia i używaj WYŁĄCZNIE "
@@ -82,11 +92,12 @@ def _traced(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         shown = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
-        print(f"  🔧 {fn.__name__}({shown})", flush=True)
+        _say(f"  🔧 {fn.__name__}({shown})")
         result = fn(*args, **kwargs)
         TOOL_LOG.append(result)
+        TRACE.append({"narzedzie": fn.__name__, "argumenty": kwargs, "wynik": result})
         preview = json.dumps(result, ensure_ascii=False)
-        print(f"     ↳ {preview[:160]}{'…' if len(preview) > 160 else ''}", flush=True)
+        _say(f"     ↳ {preview[:160]}{'…' if len(preview) > 160 else ''}")
         return result
     return wrapper
 
@@ -139,19 +150,24 @@ class ChatSession:
                     raise
                 history = self.chat.get_history()
                 self.index += 1
-                print(f"  [model niedostępny ({code}) – przełączam na {self.model}]", flush=True)
+                TRACE.append({"przelaczenie": f"model niedostępny ({code}) – przełączam na {self.model}"})
+                _say(f"  [model niedostępny ({code}) – przełączam na {self.model}]")
                 self.chat = self.factory(self.client, self.model, history)
 
 
 def answer_question(session: "ChatSession", question: str) -> str:
     """Pytanie -> odpowiedź z kontrolą liczb: przy liczbach spoza narzędzi jedna próba poprawy, potem ostrzeżenie."""
     TOOL_LOG.clear()
+    TRACE.clear()
     answer = session.send(question)
     bad = numbers.unverified(answer, TOOL_LOG)
+    LAST_CHECK.clear()
+    LAST_CHECK.update({"spoza_narzedzi": bad, "poprawka": False, "po_poprawce": []})
     if len(bad) >= 2:
-        print(f"  [kontrola liczb: {len(bad)} liczb spoza narzędzi – poprawka]", flush=True)
+        _say(f"  [kontrola liczb: {len(bad)} liczb spoza narzędzi – poprawka]")
         answer = session.send(CORRECTION.format(nums=", ".join(f"{x:g}" for x in bad[:6])))
         bad = numbers.unverified(answer, TOOL_LOG)
+        LAST_CHECK.update({"poprawka": True, "po_poprawce": bad})
         if len(bad) >= 2:
             answer += UNVERIFIED_NOTE.format(nums=", ".join(f"{x:g}" for x in bad[:6]))
     return answer
