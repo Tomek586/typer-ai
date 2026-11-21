@@ -19,6 +19,8 @@ MAX_GAP_DAYS = 300       # starsze mecze (np. przed spadkiem z ligi) nie opisuj�
 MIN_HISTORY = 3          # mniej meczów w oknie = brak cechy (wartości neutralne)
 SHRINK_90 = 2.0          # ściąganie goli/90 do średniej pozycji: (gole + 2·śr) / (minuty/90 + 2)
 FORM_HALF_LIFE = 8       # półokres formy w meczach
+LINEUP_HALF_LIFE = None  # półokres wag meczów w oknie składu (None = równe wagi); świeże mecze szybciej
+                         # „przestawiają” skład referencyjny po transferach i zmianie bramkarza
 REST_CAP = 10            # dni odpoczynku obcinane do 10
 
 NEUTRAL_LINEUP = {"att": 1.0, "reg": 1.0, "gk_backup": 0.0}
@@ -41,20 +43,26 @@ def load(conn: sqlite3.Connection):
     return matches, lineups
 
 
-def lineup_strength(history: list[list], starters: set[int], pos_rate: dict[str, float]) -> dict[str, float]:
-    """Siła składu `starters` względem składu referencyjnego z historii drużyny (docs/04, 4.4.1)."""
+def lineup_strength(history: list[list], starters: set[int], pos_rate: dict[str, float],
+                    half_life: float | None = None) -> dict[str, float]:
+    """Siła składu `starters` względem składu referencyjnego z historii drużyny (docs/04, 4.4.1).
+
+    history: składy od najstarszego do najnowszego; half_life – półokres wag meczów (None = równe wagi).
+    """
     if len(history) < MIN_HISTORY:
         return dict(NEUTRAL_LINEUP)
-    minutes: dict[int, int] = defaultdict(int)
-    goals: dict[int, int] = defaultdict(int)
+    minutes: dict[int, float] = defaultdict(float)
+    goals: dict[int, float] = defaultdict(float)
     position: dict[int, str] = {}
-    for match in history:
-        for player, _, m, g, pos in match:
-            minutes[player] += m
-            goals[player] += g
-            position[player] = pos
     n = len(history)
-    share = {p: m / (90 * n) for p, m in minutes.items()}
+    weights = [1.0 if half_life is None else 0.5 ** ((n - 1 - k) / half_life) for k in range(n)]
+    for w, match in zip(weights, history):
+        for player, _, m, g, pos in match:
+            minutes[player] += w * m
+            goals[player] += w * g
+            position[player] = pos
+    total = sum(weights)
+    share = {p: m / (90 * total) for p, m in minutes.items()}
     attack = {p: (goals[p] + SHRINK_90 * pos_rate.get(position[p], 0.0)) / (minutes[p] / 90 + SHRINK_90)
               for p in minutes}
     keepers = [p for p in minutes if position[p] == "G"]
@@ -95,8 +103,8 @@ def build(conn: sqlite3.Connection) -> dict[int, dict[str, dict[str, float]]]:
         for side, team, opp in (("home", home, away), ("away", away, home)):
             recent = [lu for ko, lu in history[team] if _days(ko, kickoff) <= MAX_GAP_DAYS]
             starters = {p for p, start, *_ in lineups.get((match_id, team), []) if start}
-            off = lineup_strength(recent, starters, pos_rate) if starters else dict(NEUTRAL_LINEUP)
-            prev = (lineup_strength(recent, last_starters[team], pos_rate)
+            off = lineup_strength(recent, starters, pos_rate, LINEUP_HALF_LIFE) if starters else dict(NEUTRAL_LINEUP)
+            prev = (lineup_strength(recent, last_starters[team], pos_rate, LINEUP_HALF_LIFE)
                     if team in last_starters and recent else dict(NEUTRAL_LINEUP))
             rest = min(_days(last_kickoff[team], kickoff), REST_CAP) if team in last_kickoff else REST_CAP
             feats[side] = {

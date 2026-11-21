@@ -4,6 +4,9 @@ Krok 1: Dixon-Coles walk-forward (dopasowanie co tydzień) daje λ „spoza pró
         sezonów 2016/17–2024/25; wynik trafia do evaluation/cache (liczony raz, ok. 4 min).
 Krok 2: dla sezonu walidacyjnego S λ-GLM uczymy na sezonach od 2016/17 do S−1, a oceniamy na S.
 Krok 3: porównanie wariantów cech (ablacja) po log-loss 1X2 i OU 2.5 oraz po mieszaniu z rynkiem.
+Krok 4: ocena „każdy sezon po kolei” (leave-one-season-out, 9 sezonów): zmiana log-wiarygodności
+        liczby goli względem Dixona-Colesa – dwa sezony walidacyjne to za mało, żeby odróżnić mały
+        efekt od szumu (21.11: efekt składu w 2024/25 miał odwrotny znak niż w 7 z 9 sezonów).
 
 Sezon testowy 2025/26 nie jest tu używany (docs/10, A.1).
 
@@ -31,21 +34,25 @@ CACHE = Path(__file__).parent / "cache"
 REPORT_DIR = Path(__file__).parent / "reports"
 
 # Grupy cech (docs/04, 4.5). Każda cecha opisuje drużynę „atakującą” (own) i jej rywala (opp).
+# Odrzucone 21.11 (bez sygnału w ocenie z 9 sezonów): różnica dni odpoczynku, skład z poprzedniego
+# meczu, bramkarz rezerwowy rywala, udział podstawowych u rywala – zostają w GROUPS do raportu ablacji.
 GROUPS = {
     "forma": ["form_gf_own", "form_ga_opp"],
     "odpoczynek": ["rest_diff"],
-    "sklad_prev": ["att_prev_own", "reg_prev_own", "reg_prev_opp", "gk_backup_prev_opp"],
-    "sklad_off": ["att_off_own", "reg_off_own", "reg_off_opp", "gk_backup_off_opp"],
+    "sklad_prev": ["att_prev_own", "reg_prev_own"],
+    "sklad_off": ["att_off_own", "reg_off_own"],
+    "sklad_off_rywal": ["reg_off_opp", "gk_backup_off_opp"],
 }
 VARIANTS = {
     "v1 (Dixon-Coles)": [],
-    "+ forma": ["forma"],
+    "+ forma (realny v2)": ["forma"],
     "+ odpoczynek": ["odpoczynek"],
     "+ skład z poprzedniego meczu": ["sklad_prev"],
-    "+ forma, odpoczynek, skład poprzedni (realny v2)": ["forma", "odpoczynek", "sklad_prev"],
     "+ skład oficjalny (górna granica)": ["sklad_off"],
-    "+ forma, odpoczynek, skład oficjalny": ["forma", "odpoczynek", "sklad_off"],
+    "+ forma, skład oficjalny": ["forma", "sklad_off"],
+    "+ forma, skład oficjalny, rywal": ["forma", "sklad_off", "sklad_off_rywal"],
 }
+LOSO_ALPHA = 10.0
 
 
 def dc_lambdas(conn: sqlite3.Connection, xi: float) -> dict[int, tuple[float, float, float]]:
@@ -124,6 +131,29 @@ def evaluate(rows, season: str, names: list[str], alpha: float):
     return preds, model
 
 
+def loso(rows, names: list[str], alpha: float = LOSO_ALPHA) -> dict:
+    """Leave-one-season-out: zmiana log-wiarygodności goli na wiersz (×1000) względem DC z wyrazem wolnym."""
+    from scipy.stats import poisson
+
+    per_season, all_rows = {}, []
+    for season in sorted({r["season"] for r in rows}):
+        test = [r for r in rows if r["season"] == season]
+        train = [r for r in rows if r["season"] != season]
+        y = np.array([r["goals"] for r in test])
+        off = np.log([r["lambda_dc"] for r in test])
+        ty = np.array([r["goals"] for r in train])
+        toff = np.log([r["lambda_dc"] for r in train])
+        base = poisson.logpmf(y, np.exp(off + np.log(ty.sum() / np.exp(toff).sum())))
+        model = glm.fit(np.array([[r[n] for n in names] for r in train]), ty, toff, names, alpha)
+        lam = np.exp(off) * model.ratio(np.array([[r[n] for n in names] for r in test]))
+        delta = 1000 * (poisson.logpmf(y, lam) - base)
+        per_season[season] = float(delta.mean())
+        all_rows.append(delta)
+    d = np.concatenate(all_rows)
+    return {"mean": float(d.mean()), "t": float(d.mean() / (d.std() / np.sqrt(len(d)))),
+            "seasons_better": sum(v > 0 for v in per_season.values()), "per_season": per_season}
+
+
 def log_loss_ou(preds, totals):
     ll = [-np.log(max(p if totals[mid] >= 3 else 1 - p, 1e-12)) for mid, (_, p) in preds.items()]
     return float(np.mean(ll))
@@ -171,6 +201,16 @@ def main() -> None:
             print(f"  {label:52} {best['alpha']:>6g} {best['log_loss_1x2']:>7.4f} {best['log_loss_ou25']:>7.4f} "
                   f"{best['blend_prod_w']:>9.4f} {best['best_w']:>6g}")
         report[season] = season_report
+
+    print(f"\nKażdy sezon po kolei (9 sezonów, alpha={LOSO_ALPHA:g}): zmiana log-wiarygodności goli ×1000 na wiersz")
+    report["loso"] = {}
+    for label, groups in VARIANTS.items():
+        names = [n for g in groups for n in GROUPS[g]]
+        if not names:
+            continue
+        r = loso(rows, names)
+        report["loso"][label] = r
+        print(f"  {label:52} {r['mean']:+6.2f}  t={r['t']:+4.1f}  lepiej w {r['seasons_better']}/9 sezonach")
 
     REPORT_DIR.mkdir(exist_ok=True)
     path = REPORT_DIR / "validate_v2.json"
