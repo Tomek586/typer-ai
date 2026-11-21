@@ -4,9 +4,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## Otwarte sprawy
 
-- [ ] Imiona i nazwiska zespołu w README, prezentacji i dokumentacji (teraz `[Imię Nazwisko]`).
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
-- [ ] Komputer domowy: ustawić „Uśpij po” = Nigdy przy zasilaniu z sieci (21.11 było 30 min), inaczej etapy przed meczami przepadną.
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
 - [ ] Model v2: krok 1 i diagnoza składu zrobione 21.11 (wpisy niżej). Ratingi Elo/pi i motywacja sprawdzone 21.11 (bez zysku); stabilny zysk daje tylko forma. Do decyzji: czy wdrożyć v1 + forma w trakcie testu na żywo. Niesprawdzone: derby (brak listy par w repozytorium), puchary (brak terminarza pucharów); każda cecha oceniana „każdy sezon po kolei” (9 sezonów) i zostaje tylko, jeśli poprawia wynik.
 - [ ] Regulaminy serwisów newsowych (Sportowe Fakty/WP, Interia, TVP Sport, Sport.pl/Agora, Weszło): sprawdzić zastrzeżenia eksploracji tekstu i danych (TDM); serwis z zakazem usuwamy z `config.NEWS_SOURCES`.
@@ -18,6 +16,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-21
 
+- **Zespół:** Tomasz Dziedzic, Adam Nowak (README, slajd tytułowy prezentacji PoC, notebook). **Komputer domowy:** usypianie przy zasilaniu z sieci wyłączone (sprawdzone `powercfg`: 0 = nigdy).
 - **Newsy w czacie i aplikacji:** narzędzie czatu `newsy` (aktywne fakty z pewnością i źródłem + tytuły ostatnich artykułów), fakty obu drużyn w wyniku `analiza_meczu` (pole `newsy`), reguła 14 w prompcie (podawaj pewność i źródło; newsy nie zmieniają prawdopodobieństw ani typów), strona aplikacji „Newsy” i sekcja 3.5 w notebooku. Sprawdzone: pytanie o Śląsk → narzędzie `newsy`, odpowiedź w 2,1 s ze źródłem. Uwaga: „Lech” bez „Poznań” nie jest aliasem drużyny w `teams.py` (tylko „Kolejorz”) – do uzupełnienia aliasów.
 - **Pipeline newsów (docs/05), pierwsza wersja.**
   - **Źródła:** kanały RSS Sportowych Faktów (Ekstraklasa), Interii (Ekstraklasa), TVP Sport, Sport.pl i Weszło (`config.NEWS_SOURCES`). Sprawdzone 21.11: robots.txt żadnego z nich nie blokuje zwykłych botów; Meczyki, Onet (Ekstraklasa) i strony klubów nie mają działającego RSS.
