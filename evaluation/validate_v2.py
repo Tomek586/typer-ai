@@ -39,6 +39,8 @@ REPORT_DIR = Path(__file__).parent / "reports"
 GROUPS = {
     "forma": ["form_gf_own", "form_ga_opp"],
     "odpoczynek": ["rest_diff"],
+    "elo": ["elo_diff"],
+    "pi": ["pi_diff"],
     "sklad_prev": ["att_prev_own", "reg_prev_own"],
     "sklad_off": ["att_off_own", "reg_off_own"],
     "sklad_off_rywal": ["reg_off_opp", "gk_backup_off_opp"],
@@ -47,6 +49,9 @@ VARIANTS = {
     "v1 (Dixon-Coles)": [],
     "+ forma (realny v2)": ["forma"],
     "+ odpoczynek": ["odpoczynek"],
+    "+ Elo": ["elo"],
+    "+ pi-ratings": ["pi"],
+    "+ forma, Elo, pi-ratings": ["forma", "elo", "pi"],
     "+ skład z poprzedniego meczu": ["sklad_prev"],
     "+ skład oficjalny (górna granica)": ["sklad_off"],
     "+ forma, skład oficjalny": ["forma", "sklad_off"],
@@ -86,6 +91,7 @@ def team_rows(match_feats: dict, side: str) -> dict[str, float]:
     return {
         "form_gf_own": own["form_gf"], "form_ga_opp": opp["form_ga"],
         "rest_diff": own["rest_days"] - opp["rest_days"],
+        "elo_diff": own["elo"] - opp["elo"], "pi_diff": own["pi_g"] - opp["pi_g"],
         **{f"{k}_{v}_own": own[f"{k}_{v}"] for k in ("att", "reg") for v in ("prev", "off")},
         **{f"reg_{v}_opp": opp[f"reg_{v}"] for v in ("prev", "off")},
         **{f"gk_backup_{v}_opp": opp[f"gk_backup_{v}"] for v in ("prev", "off")},

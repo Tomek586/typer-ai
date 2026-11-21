@@ -14,6 +14,8 @@ import sqlite3
 from collections import defaultdict, deque
 from datetime import datetime
 
+from typerai.model.ratings import elo, pi
+
 WINDOW = 10              # mecze drużyny w oknie siły składu
 MAX_GAP_DAYS = 300       # starsze mecze (np. przed spadkiem z ligi) nie opisują obecnego składu
 MIN_HISTORY = 3          # mniej meczów w oknie = brak cechy (wartości neutralne)
@@ -22,6 +24,8 @@ FORM_HALF_LIFE = 8       # półokres formy w meczach
 LINEUP_HALF_LIFE = None  # półokres wag meczów w oknie składu (None = równe wagi); świeże mecze szybciej
                          # „przestawiają” skład referencyjny po transferach i zmianie bramkarza
 REST_CAP = 10            # dni odpoczynku obcinane do 10
+ELO_PARAMS = {"k": elo.K, "hfa": elo.HFA}
+PI_PARAMS = {"lam": pi.LAMBDA, "gamma": pi.GAMMA}
 
 NEUTRAL_LINEUP = {"att": 1.0, "reg": 1.0, "gk_backup": 0.0}
 
@@ -95,6 +99,8 @@ def build(conn: sqlite3.Connection) -> dict[int, dict[str, dict[str, float]]]:
     pos_goals: dict[str, float] = defaultdict(float)
     pos_minutes: dict[str, float] = defaultdict(float)
     decay = 0.5 ** (1 / FORM_HALF_LIFE)
+    elo_r = elo.pre_match(matches, **ELO_PARAMS)
+    pi_r = pi.pre_match(matches, **PI_PARAMS)
     out = {}
 
     for match_id, _, kickoff, home, away, hg, ag in matches:
@@ -113,6 +119,9 @@ def build(conn: sqlite3.Connection) -> dict[int, dict[str, dict[str, float]]]:
                 "form_gf": form_gf.get(team, 1.3), "form_ga": form_ga.get(team, 1.3),
                 "rest_days": rest, "n_history": len(recent),
             }
+        hh, ha, ah, aa = pi_r[match_id]
+        feats["home"].update(elo=elo_r[match_id][0], pi_g=pi.expected_goal_diff(hh))   # gospodarz: rating u siebie
+        feats["away"].update(elo=elo_r[match_id][1], pi_g=pi.expected_goal_diff(aa))   # gość: rating na wyjeździe
         out[match_id] = feats
 
         # stan po meczu

@@ -8,7 +8,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
 - [ ] Komputer domowy: ustawić „Uśpij po” = Nigdy przy zasilaniu z sieci (21.11 było 30 min), inaczej etapy przed meczami przepadną.
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
-- [ ] Model v2: krok 1 i diagnoza składu zrobione 21.11 (wpisy niżej). Dalej: ratingi Elo/pi, motywacja z tabeli, derby; każda cecha oceniana „każdy sezon po kolei” (9 sezonów) i zostaje tylko, jeśli poprawia wynik.
+- [ ] Model v2: krok 1 i diagnoza składu zrobione 21.11 (wpisy niżej). Ratingi Elo/pi sprawdzone 21.11 (bez zysku). Dalej: motywacja z tabeli, derby; każda cecha oceniana „każdy sezon po kolei” (9 sezonów) i zostaje tylko, jeśli poprawia wynik.
 - [ ] Newsy: wykrywanie kontuzji i zawieszeń (Jev lub LLM), przewidywany skład.
 - [ ] RAG, ocena NLP; aplikacja: strony „Mecz”, „Newsy”, „Decyzje Jev”, „System” (Czat, Typy, Wyniki gotowe 21.11).
 - [ ] Jakość odpowiedzi modeli „lite” vs `3.5-flash` (od 21.11 domyślnie „lite”): porównać na zbiorze pytań testowych przy ewaluacji NLP.
@@ -17,6 +17,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-21
 
+- **Ratingi Elo i pi-ratings (model v2) nic nie dodają do Dixona-Colesa.** Zaimplementowane według docs/04, 4.2 (`typerai/model/ratings/`), siatka ze specyfikacji: Elo K ∈ {15, 20, 25, 30} × HFA ∈ {40, 60, 80}, pi λ ∈ {0,025; 0,035; 0,045} × γ ∈ {0,5; 0,7; 0,9}. W ocenie „każdy sezon po kolei” wszystkie ustawienia dają ≈ 0 (od −0,12 do +0,03 na 1000 wierszy, lepiej w 4–5 z 9 sezonów). Same ratingi działają poprawnie – przewidują różnicę goli tak jak DC (korelacja 0,23–0,25) – ale są z nim silnie skorelowane (0,81 Elo, 0,87 pi), więc nie wnoszą nowej informacji. Na samym 2023/24 wyglądały na zysk (1,0627 → 1,0600), co znowu pokazuje, że jeden sezon walidacyjny myli. Parametry zostają domyślne (K = 20, HFA = 60, λ = 0,035, γ = 0,7); cechy nie wchodzą do v2.
 - **Diagnoza cech składu (model v2):** ocena na dwóch sezonach walidacyjnych była za słaba – efekt składu w 2024/25 miał odwrotny znak niż w 7 z 9 sezonów. Dodano ocenę „każdy sezon po kolei” (leave-one-season-out, 9 sezonów 2016/17–2024/25, zmiana log-wiarygodności liczby goli względem Dixona-Colesa).
   - **Skład oficjalny ma prawdziwy, ale mały efekt:** udział podstawowych zawodników i ich wkład w atak dają +1,1 na 1000 wierszy (lepiej w 7/9 sezonach); forma +2,0 (7/9); forma + skład oficjalny +3,2 (t = 2,5). To nie błąd w kodzie: wynik prawie się nie zmienia przy oknie 5/10/20 meczów i przy ważeniu świeżych meczów (półokres 3 i 6).
   - **Odrzucone (bez sygnału):** skład z poprzedniego meczu, różnica dni odpoczynku, bramkarz rezerwowy rywala (flaga w 24% meczów, bo po zmianie bramkarza okno długo uznaje starego), udział podstawowych u rywala. Wcześniejszy „realny v2” 1,0575 w 2023/24 był szczęściem: skład z poprzedniego meczu nie ma sygnału.
