@@ -31,7 +31,8 @@ flowchart LR
 Zadanie `collect_news` uruchamia się co 2 godziny w godzinach 8:00–22:00.
 
 ### Krok 1: pobranie i czyszczenie
-- `feedparser` czyta kanały RSS z listy źródeł (`config.NEWS_SOURCES`).
+- `feedparser` czyta kanały RSS z listy źródeł (`config.NEWS_SOURCES`; stan 21.11.2026: Sportowe Fakty, Interia, TVP Sport, Sport.pl, Weszło). Regulaminy serwisów sprawdza zespół; źródło z zastrzeżeniem eksploracji tekstu i danych usuwamy z listy.
+- Wstępny filtr: artykuł pobieramy tylko wtedy, gdy tytuł lub zajawka wspomina drużynę bieżącego sezonu (`config.NEWS_TEAM_PATTERNS`, wzorce uwzględniające odmianę). Przed pobraniem sprawdzamy `robots.txt`, między zapytaniami do jednego serwisu 2 s przerwy.
 - Dla nowych URL-i `trafilatura` pobiera czysty tekst artykułu bez menu, reklam i komentarzy.
 - Odrzucamy artykuły krótsze niż 300 znaków i starsze niż 7 dni.
 - Zapis do `NEWS_ARTICLE` (tytuł, tekst, źródło, wiarygodność, `published_at`).
@@ -220,5 +221,7 @@ Pole `summary_title` to oryginalny tytuł artykułu, a nie tekst generowany. Do 
 Każdy artykuł (także duplikaty i kategoria `other`) trafia do ChromaDB. Chunking, embeddingi i wyszukiwanie opisuje rozdz. 8.4. Metadane chunka: `team_ids`, `category`, `published_at`, `source`, `url`, `fact_ids`.
 
 ## 5.8 Plan B bez Jev
+
+**Stan 21.11.2026:** działa plan B – `LLMEngine` na Gemini (`typerai/decision/engine.py`, `typerai/news/extract.py`), wszystkie pytania artykułu w jednym zapytaniu, najwyżej 3 drużyny na artykuł i 10 artykułów na przebieg harmonogramu.
 
 Jeśli API Jev będzie niedostępne, te same pytania (Noul, Choice, Score) obsługuje `LLMEngine` (rozdz. 6.6). LLM zwraca JSON z prawdopodobieństwami w identycznym formacie, więc reszta pipeline'u się nie zmienia. Porównanie obu silników to jeden z eksperymentów (rozdz. 10).
