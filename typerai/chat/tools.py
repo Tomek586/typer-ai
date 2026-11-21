@@ -170,7 +170,9 @@ def _facts(conn, team_id: str, as_of: str, limit: int = 5) -> list[dict]:
     return [{"kategoria": CATEGORY_PL.get(f["category"], f["category"]), "zawodnik": f["player"],
              "status": STATUS_PL.get(f["status"]), "wplyw_0_4": f["impact"],
              "pewnosc": CERTAINTY_PL.get(f["certainty"], f["certainty"]), "od": _local(f["valid_from"]),
-             "zrodlo": f["title"], "url": f["url"]} for f in extract.active_facts(conn, team_id, as_of)[:limit]]
+             "zrodlo": f["title"], "url": f["url"],
+             "typ_zrodla": "ręczne potwierdzenie" if f["source"] == "manual" else "artykuł"}
+            for f in extract.active_facts(conn, team_id, as_of)[:limit]]
 
 
 def newsy(druzyna: str, dni: int = 7) -> dict:

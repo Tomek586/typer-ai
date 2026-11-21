@@ -193,6 +193,9 @@ MIGRATIONS = [
     ("pick", "p_stage2", "REAL"),
     ("pick", "ev_stage2", "REAL"),
     ("pick", "bookmaker_stage2", "TEXT"),
+    ("news_fact", "note", "TEXT"),          # ręczne potwierdzenie: krótki opis (np. treść wpisu na X)
+    ("news_fact", "source_url", "TEXT"),    # ręczne potwierdzenie: link do źródła
+    ("news_fact", "created_at", "TEXT"),
 ]
 
 

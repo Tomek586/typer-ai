@@ -220,6 +220,10 @@ Pole `summary_title` to oryginalny tytuł artykułu, a nie tekst generowany. Do 
 
 Każdy artykuł (także duplikaty i kategoria `other`) trafia do ChromaDB. Chunking, embeddingi i wyszukiwanie opisuje rozdz. 8.4. Metadane chunka: `team_ids`, `category`, `published_at`, `source`, `url`, `fact_ids`.
 
+## 5.7a Ręczne potwierdzenia (stan 21.11.2026)
+
+Dziennikarze podają informacje o składach głównie na X, a API X jest płatne (0,005 USD za wpis), Bluesky jest dla polskiej piłki nieaktywny, a strony klubów nie mają RSS. Dlatego informacje z X i z komunikatów klubów wpisujemy ręcznie: formularz na stronie „Newsy” (`typerai/news/manual.py`) zapisuje fakt `source = manual` z opisem źródła i linkiem. Fakt podlega tym samym zasadom scalania i ważności (5.3, 5.5), jest widoczny w czacie i może zostać wycofany. Wpisujemy na komputerze z bazą główną.
+
 ## 5.8 Plan B bez Jev
 
 **Stan 21.11.2026:** działa plan B – `LLMEngine` na Gemini (`typerai/decision/engine.py`, `typerai/news/extract.py`), wszystkie pytania artykułu w jednym zapytaniu, najwyżej 3 drużyny na artykuł i 10 artykułów na przebieg harmonogramu.
