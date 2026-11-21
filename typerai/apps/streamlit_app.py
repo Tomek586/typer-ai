@@ -266,6 +266,68 @@ def page_results() -> None:
 
 # ------------------------------------------------------------------ Newsy
 
+MANUAL_CATEGORIES = {"injury": "kontuzja", "suspension": "zawieszenie", "return": "powrót do składu",
+                     "coach_change": "zmiana trenera", "club_crisis": "kryzys w klubie",
+                     "fatigue_schedule": "zmęczenie, rotacja", "motivation_context": "stawka meczu",
+                     "match_conditions": "warunki meczu"}
+MANUAL_STATUS = {"out": "nie zagra", "doubtful": "niepewny", "available": "dostępny"}
+MANUAL_CERTAINTY = {"official": "oficjalne (klub, trener, liga)", "reported": "doniesienia mediów / dziennikarza",
+                    "speculation": "spekulacja"}
+
+
+def _manual_form(ro_conn, facts) -> None:
+    """Ręczne potwierdzenie (docs/05, 5.5): np. wpis dziennikarza na X albo komunikat klubu."""
+    from datetime import datetime, timezone
+
+    from typerai import db
+    from typerai.collectors.news import current_teams
+    from typerai.news import extract, manual
+
+    with st.expander("➕ Dodaj ręczne potwierdzenie (np. wpis z X, komunikat klubu)"):
+        st.caption("Zapis trafia do bazy na tym komputerze. Wpisuj na komputerze domowym – na kopii bazy (laptop) "
+                   "wpis zniknie przy następnej kopii.")
+        if st.session_state.pop("manual_saved", None):
+            st.success("Zapisano. Fakt jest widoczny w czacie (narzędzie newsy) i w tabeli poniżej.")
+        names = dict(ro_conn.execute("SELECT id, name FROM team").fetchall())
+        teams = sorted(current_teams(ro_conn), key=lambda t: names.get(t, t))
+        team = st.selectbox("Drużyna", teams, format_func=lambda t: names.get(t, t), key="m_team")
+        now = datetime.now(timezone.utc)
+        squad = extract.squad(ro_conn, team, now.isoformat(timespec="minutes"))
+        with st.form("manual_fact", clear_on_submit=True):
+            category = st.selectbox("Co się stało", list(MANUAL_CATEGORIES), format_func=MANUAL_CATEGORIES.get)
+            player = st.selectbox("Zawodnik (opcjonalnie)", [None] + [p for p, _ in squad],
+                                  format_func=lambda p: "— cała drużyna —" if p is None else dict(squad)[p])
+            c1, c2, c3 = st.columns(3)
+            status = c1.selectbox("Status zawodnika", list(MANUAL_STATUS), format_func=MANUAL_STATUS.get)
+            certainty = c2.selectbox("Pewność", list(MANUAL_CERTAINTY), format_func=MANUAL_CERTAINTY.get)
+            impact = c3.slider("Wpływ na najbliższy mecz (0–4)", 0.0, 4.0, 3.0, 0.5)
+            note = st.text_input("Opis i źródło (wymagane)", placeholder="np. @dziennikarz: Ishak nie zagra z Legią (uraz uda)")
+            url = st.text_input("Link (opcjonalnie)")
+            if st.form_submit_button("Zapisz fakt"):
+                try:
+                    conn = db.connect()
+                    db.init_db(conn)               # dodaje nowe kolumny w starszej bazie
+                    manual.add(conn, team, category, note, player_id=player,
+                               status=status if player is not None else None, certainty=certainty,
+                               impact=impact, source_url=url)
+                    conn.close()
+                except ValueError as e:
+                    st.error(str(e))
+                else:
+                    st.session_state.manual_saved = True
+                    st.rerun()                     # odświeża liczniki i tabelę faktów
+        own = [f for f in facts if f["typ"] == "ręczne"]
+        if own:
+            choice = st.selectbox("Wycofaj ręczny fakt (pomyłka)", [None] + [f["id"] for f in own],
+                                  format_func=lambda i: "—" if i is None else next(
+                                      f"{f['drużyna']}: {f['kategoria']} {f['zawodnik']} – {f['źródło']}" for f in own if f["id"] == i))
+            if choice is not None and st.button("Wycofaj"):
+                conn = db.connect()
+                manual.withdraw(conn, choice)
+                conn.close()
+                st.rerun()
+
+
 def page_news() -> None:
     conn = _conn()
     st.title("📰 Newsy")
@@ -281,12 +343,14 @@ def page_news() -> None:
               help="Najwyżej 10 artykułów na przebieg – limit chroni darmowe zapytania do Gemini")
     c4.metric("Aktywne fakty", len(facts))
 
+    _manual_form(conn, facts)
+
     names = sorted({f["drużyna"] for f in facts})
     team = st.selectbox("Drużyna", ["wszystkie"] + names)
     st.subheader("Aktywne fakty")
     shown = [f for f in facts if team == "wszystkie" or f["drużyna"] == team]
     if shown:
-        df = pd.DataFrame(shown).drop(columns=["team_id"])
+        df = pd.DataFrame(shown).drop(columns=["team_id", "id"])
         st.dataframe(df, hide_index=True, width="stretch",
                      column_config={"url": st.column_config.LinkColumn("link", display_text="otwórz")})
     else:

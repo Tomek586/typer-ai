@@ -233,15 +233,20 @@ def news_articles(conn: sqlite3.Connection, days: int = 7, now: datetime | None 
 
 def news_facts(conn: sqlite3.Connection, now: datetime | None = None) -> list[dict]:
     """Aktywne fakty wszystkich drużyn (niezastąpione i ważne), od największego wpływu."""
+    from typerai.news.extract import manual_columns
+
     as_of = (now or datetime.now(timezone.utc)).isoformat(timespec="minutes")
+    note, url = manual_columns(conn)
     rows = conn.execute(
-        """SELECT t.name AS team, f.team_id, f.category, p.name AS player, f.status, f.impact, f.certainty,
-                  f.valid_until, a.title, a.url FROM news_fact f
+        f"""SELECT f.id, f.source, t.name AS team, f.team_id, f.category, p.name AS player, f.status, f.impact,
+                  f.certainty, f.valid_until, COALESCE(a.title, {note}) AS title, COALESCE(a.url, {url}) AS url
+           FROM news_fact f
            JOIN team t ON t.id = f.team_id LEFT JOIN player p ON p.id = f.player_id
            LEFT JOIN news_article a ON a.id = f.article_id
            WHERE f.superseded_by IS NULL AND f.valid_from <= ? AND (f.valid_until IS NULL OR f.valid_until > ?)
            ORDER BY f.impact DESC""", (as_of, as_of)).fetchall()
-    return [{"drużyna": r["team"], "team_id": r["team_id"],
+    return [{"id": r["id"], "typ": "ręczne" if r["source"] == "manual" else "artykuł",
+             "drużyna": r["team"], "team_id": r["team_id"],
              "kategoria": CATEGORY_LABELS.get(r["category"], r["category"]), "zawodnik": r["player"] or "–",
              "status": FACT_STATUS.get(r["status"], "–"), "wpływ (0–4)": r["impact"],
              "pewność": CERTAINTY_LABELS.get(r["certainty"], r["certainty"]),

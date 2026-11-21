@@ -125,14 +125,19 @@ def interpret(answers, team_names, squads) -> list[dict]:
     return facts
 
 
-def save_fact(conn, fact: dict, article_id: int, valid_from: str) -> int:
-    """Zapis z zasadami scalania (docs/05, 5.5): nowszy fakt zastępuje starszy, chyba że starszy jest pewniejszy i sprzeczny."""
+def save_fact(conn, fact: dict, article_id: int | None, valid_from: str, source: str = "news",
+              note: str | None = None, source_url: str | None = None) -> int:
+    """Zapis z zasadami scalania (docs/05, 5.5): nowszy fakt zastępuje starszy, chyba że starszy jest pewniejszy i sprzeczny.
+
+    source: 'news' (z artykułu) albo 'manual' (ręczne potwierdzenie w aplikacji, bez artykułu).
+    """
     until = valid_until(conn, fact["team_id"], fact["category"], valid_from)
     fact_id = conn.execute(
         """INSERT INTO news_fact (article_id, source, team_id, player_id, category, status, impact, direction, certainty,
-           valid_from, valid_until) VALUES (?, 'news', ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (article_id, fact["team_id"], fact["player_id"], fact["category"], fact["status"], fact["impact"],
-         fact["direction"], fact["certainty"], valid_from, until)).lastrowid
+           valid_from, valid_until, note, source_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (article_id, source, fact["team_id"], fact["player_id"], fact["category"], fact["status"], fact["impact"],
+         fact["direction"], fact["certainty"], valid_from, until, note, source_url,
+         _iso(datetime.now(timezone.utc)))).lastrowid
     older = conn.execute(
         """SELECT id, status, certainty FROM news_fact WHERE id != ? AND team_id = ? AND category = ?
            AND player_id IS ? AND superseded_by IS NULL""",
@@ -207,14 +212,23 @@ def process(conn: sqlite3.Connection, engine: DecisionEngine, limit: int = 10) -
     return stats
 
 
+def manual_columns(conn: sqlite3.Connection) -> tuple[str, str]:
+    """Wyrażenia SQL na opis i link faktu ręcznego; starsza baza (np. kopia na laptopie) nie ma tych kolumn."""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(news_fact)")}
+    return ("f.note" if "note" in cols else "NULL"), ("f.source_url" if "source_url" in cols else "NULL")
+
+
 def active_facts(conn: sqlite3.Connection, team: str, as_of: str) -> list[dict]:
     """Aktualne fakty drużyny (kontekst dla bramki i czatu, docs/05 5.6), od największego wpływu."""
+    note, url = manual_columns(conn)
     rows = conn.execute(
-        """SELECT f.category, f.status, f.impact, f.certainty, f.valid_from, p.name AS player, a.title, a.url
+        f"""SELECT f.category, f.status, f.impact, f.certainty, f.valid_from, p.name AS player,
+                  COALESCE(a.title, {note}) AS title, COALESCE(a.url, {url}) AS url, f.source
            FROM news_fact f LEFT JOIN player p ON p.id = f.player_id LEFT JOIN news_article a ON a.id = f.article_id
            WHERE f.team_id = ? AND f.superseded_by IS NULL AND f.valid_from <= ? AND (f.valid_until IS NULL OR f.valid_until > ?)
            ORDER BY f.impact DESC""", (team, as_of, as_of)).fetchall()
-    return [dict(zip(("category", "status", "impact", "certainty", "valid_from", "player", "title", "url"), r)) for r in rows]
+    return [dict(zip(("category", "status", "impact", "certainty", "valid_from", "player", "title", "url", "source"), r))
+            for r in rows]
 
 
 def main() -> None:

@@ -164,3 +164,34 @@ def test_news_tool_and_report_show_active_facts(conn, monkeypatch, tmp_path):
     assert facts[0]["kategoria"] == "zmiana trenera" and facts[0]["pewność"] == "oficjalne"
     statuses = {a["tytuł"]: a["status"] for a in report.news_articles(conn, now=now)}
     assert statuses["Lech: nowy trener"] == "czeka na klasyfikację"
+
+
+def test_manual_fact_is_visible_and_can_be_withdrawn(conn):
+    from typerai.chat import tools
+    from typerai.news import manual
+
+    now = extract.datetime(2026, 11, 21, 12, 0, tzinfo=extract.timezone.utc)
+    fid = manual.add(conn, "lech", "injury", "@dziennikarz: Ishak nie zagra z Legią", player_id=11,
+                     certainty="reported", source_url="https://x.com/d/1", now=now)
+    row = conn.execute("SELECT source, status, article_id, note, valid_until FROM news_fact WHERE id = ?", (fid,)).fetchone()
+    assert tuple(row) == ("manual", "out", None, "@dziennikarz: Ishak nie zagra z Legią", "2026-12-05T12:00+00:00")
+    active = extract.active_facts(conn, "lech", "2026-11-22T00:00+00:00")
+    assert active[0]["title"].startswith("@dziennikarz") and active[0]["url"] == "https://x.com/d/1"
+    assert active[0]["source"] == "manual"
+    manual.withdraw(conn, fid, now=extract.datetime(2026, 11, 21, 13, 0, tzinfo=extract.timezone.utc))
+    assert extract.active_facts(conn, "lech", "2026-11-22T00:00+00:00") == []
+    with pytest.raises(ValueError):
+        manual.add(conn, "lech", "injury", "   ")
+    with pytest.raises(ValueError):
+        manual.add(conn, "lech", "transfer", "nowy napastnik")
+
+
+def test_facts_readable_on_database_without_manual_columns(conn):
+    from typerai import report
+
+    extract.save_fact(conn, fact(category="coach_change", status=None, player=None), 1, PUBLISHED)
+    for col in ("note", "source_url", "created_at"):          # stara kopia bazy (np. laptop) bez nowych kolumn
+        conn.execute(f"ALTER TABLE news_fact DROP COLUMN {col}")
+    assert extract.active_facts(conn, "lech", "2026-11-21T00:00+00:00")[0]["title"] == "Ishak kontuzjowany"
+    now = extract.datetime(2026, 11, 21, 12, 0, tzinfo=extract.timezone.utc)
+    assert report.news_facts(conn, now)[0]["kategoria"] == "zmiana trenera"

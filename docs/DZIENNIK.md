@@ -8,7 +8,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
 - [ ] Model v2: krok 1 i diagnoza składu zrobione 21.11 (wpisy niżej). Ratingi Elo/pi i motywacja sprawdzone 21.11 (bez zysku); stabilny zysk daje tylko forma. Do decyzji: czy wdrożyć v1 + forma w trakcie testu na żywo. Niesprawdzone: derby (brak listy par w repozytorium), puchary (brak terminarza pucharów); każda cecha oceniana „każdy sezon po kolei” (9 sezonów) i zostaje tylko, jeśli poprawia wynik.
 - [ ] Regulaminy serwisów newsowych (Sportowe Fakty/WP, Interia, TVP Sport, Sport.pl/Agora, Weszło): sprawdzić zastrzeżenia eksploracji tekstu i danych (TDM); serwis z zakazem usuwamy z `config.NEWS_SOURCES`.
-- [ ] Newsy: pobieranie i fakty działają od 21.11; zostaje przewidywany skład z faktów, kontekst dla bramki i czatu, RAG, zbiór 150 artykułów do oceny.
+- [ ] Newsy: pobieranie, fakty i ręczne potwierdzenia działają od 21.11; zostaje przewidywany skład z faktów, kontekst dla bramki, RAG, zbiór 150 artykułów do oceny.
 - [ ] RAG, ocena NLP; aplikacja: strony „Mecz”, „Decyzje Jev”, „System” (Czat, Typy, Wyniki, Newsy gotowe 21.11).
 - [ ] Jakość odpowiedzi modeli „lite” vs `3.5-flash` (od 21.11 domyślnie „lite”): porównać na zbiorze pytań testowych przy ewaluacji NLP.
 
@@ -16,6 +16,10 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-21
 
+- **Twitter/X jako źródło – sprawdzone, decyzja: ręczne potwierdzenia.**
+  - **Bluesky:** API darmowe i bez logowania (czytanie wpisów wybranych kont), ale polskie konta piłkarskie są martwe – żadne z 13 sprawdzonych (Ekstraklasa, kluby, Meczyki, Przegląd Sportowy, dziennikarze) nie pisało w ostatnich 14 dniach; konta klubów puste. Strony 18 klubów nie mają kanałów RSS.
+  - **API X:** od 6.02.2026 tylko płatność za użycie, 0,005 USD za odczytany wpis, bez darmowego planu (20 USD kredytu na start); 10 kont ≈ 10–25 USD/mies. Scrapowanie X bez API łamie regulamin – odpada.
+  - **Decyzja (Tomasz):** ręczne potwierdzenia w aplikacji zamiast płatnego API: formularz na stronie „Newsy” (drużyna, kategoria, zawodnik z kadry, status, pewność, wpływ, opis ze źródłem, link), fakty `source = manual` w tej samej tabeli i z tymi samymi zasadami scalania; możliwość wycofania pomyłki. Widoczne w czacie (`newsy`, z typem źródła) i na stronie „Newsy”. Nowe kolumny `news_fact.note`, `source_url`, `created_at` (migracja); odczyt działa też na starszej kopii bazy bez tych kolumn.
 - **Zespół:** Tomasz Dziedzic, Adam Nowak (README, slajd tytułowy prezentacji PoC, notebook). **Komputer domowy:** usypianie przy zasilaniu z sieci wyłączone (sprawdzone `powercfg`: 0 = nigdy).
 - **Newsy w czacie i aplikacji:** narzędzie czatu `newsy` (aktywne fakty z pewnością i źródłem + tytuły ostatnich artykułów), fakty obu drużyn w wyniku `analiza_meczu` (pole `newsy`), reguła 14 w prompcie (podawaj pewność i źródło; newsy nie zmieniają prawdopodobieństw ani typów), strona aplikacji „Newsy” i sekcja 3.5 w notebooku. Sprawdzone: pytanie o Śląsk → narzędzie `newsy`, odpowiedź w 2,1 s ze źródłem. Uwaga: „Lech” bez „Poznań” nie jest aliasem drużyny w `teams.py` (tylko „Kolejorz”) – do uzupełnienia aliasów.
 - **Pipeline newsów (docs/05), pierwsza wersja.**
