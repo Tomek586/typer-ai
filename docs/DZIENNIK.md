@@ -11,12 +11,13 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 - [ ] Model v2: siła składu, forma, H2H, derby, motywacja, zmęczenie; każda cecha zostaje tylko, jeśli poprawia backtest.
 - [ ] Newsy: wykrywanie kontuzji i zawieszeń (Jev lub LLM), przewidywany skład.
 - [ ] RAG, ocena NLP; aplikacja: strony „Mecz”, „Newsy”, „Decyzje Jev”, „System” (Czat, Typy, Wyniki gotowe 21.11).
-- [ ] Gemini `3.5-flash` 21.11 zwracał 504 po 60 s (odpowiedź po ok. 66–68 s z `3.5-flash-lite`); sprawdzić, czy to stałe, i ewentualnie zmienić kolejność modeli albo skrócić limit czasu.
+- [ ] Jakość odpowiedzi modeli „lite” vs `3.5-flash` (od 21.11 domyślnie „lite”): porównać na zbiorze pytań testowych przy ewaluacji NLP.
 
 ---
 
 ## 2026-11-21
 
+- **Nowa kolejność modeli Gemini i limit 30 s.** Pomiar 21.11 (jedno krótkie zapytanie na model): `3.5-flash` 503 po 36 s (wcześniej 504 po 60 s), `3.7/3.6/3.8-flash` 503 po 2–8 s, działały tylko `3.5-flash-lite` (0,5 s) i `3.1-flash-lite` (2,9 s). Kolejność: `3.5-flash-lite` → `3.1-flash-lite` → `3.5-flash` → większe modele; limit czasu 60 → 30 s (`GEMINI_TIMEOUT_S`). Analiza meczu w czacie: 3,3 s zamiast ok. 68 s. Modele „lite” poprawnie wywołują narzędzia, a zmyślone liczby wyłapuje kontrola G5; jakość porównamy w ewaluacji.
 - **Aplikacja Streamlit, pierwsza wersja:** Czat (z panelem „Jak powstała odpowiedź”), Typy (z tabelą „dlaczego jest albo nie ma typu”), Wyniki. Baza otwierana tylko do odczytu (`typerai/report.py`), więc aplikacja działa też na kopii na laptopie. Zależności w osobnych grupach `[app]` i `[notebook]`, żeby harmonogram ich nie wymagał.
 - **Notebook na zajęcia 22.11** (`notebooks/postep_po_PoC.ipynb`): walidacja walk-forward liczona na żywo (ok. 45 s) zamiast „epok”, bo model v1 nie ma treningu iteracyjnego; symulacja reguł odtwarza liczby z analizy progu EV (8 → 22,5 typu/sezon). Zapisany z wynikami, żeby dało się go pokazać bez bazy.
 - **Harmonogram działa na komputerze domowym** (zadanie `TyperAI_Scheduler`, start 12:20). Testy: 104 przeszło. Po starcie nadrobił etap 1 (ok) i rozliczenie; pierwsze 2 typy strategii „cień”, oficjalnych 0. Od teraz `data/typer.db` na tym komputerze jest bazą główną.

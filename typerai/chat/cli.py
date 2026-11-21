@@ -22,11 +22,15 @@ from typerai.chat.tools import TOOLS
 # Darmowy plan Gemini: ok. 20 zapytań dziennie NA MODEL, a pytanie z narzędziami zużywa 2–4 zapytania.
 # Gdy model wyczerpie limit (429), jest przeciążony (503) albo niedostępny (404), przechodzimy na następny.
 # Kolejność z pomiarów 8.11.2026: 3.5-flash odpowiadał w 3–9 s, 3.5-flash-lite w <1 s, większe modele 20–70 s.
-MODELS = os.getenv("GEMINI_MODELS", "gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.7-flash,"
-                                    "gemini-3.6-flash,gemini-3.8-flash,gemini-3.1-flash-lite").split(",")
+# 21.11.2026: 3.5-flash i wszystkie większe modele zwracały 503/504 (przeciążenie, po 36–60 s), działały tylko
+# modele „lite” (0,5–3 s) i poprawnie korzystały z narzędzi – dlatego 3.5-flash-lite jest pierwszy, a 3.1-flash-lite drugi.
+MODELS = os.getenv("GEMINI_MODELS", "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-3.5-flash,"
+                                    "gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash").split(",")
 SWITCH_CODES = (404, 429)  # oraz każdy błąd serwera 5xx
-# Bez ukrytych ponowień SDK (potrafią czekać minutami) – po 60 s lub błędzie od razu następny model
-HTTP_OPTIONS = types.HttpOptions(timeout=60_000, retry_options=types.HttpRetryOptions(attempts=1))
+# Bez ukrytych ponowień SDK (potrafią czekać minutami) – po limicie czasu lub błędzie od razu następny model.
+# 30 s: zapytanie z narzędziami w działającym modelu trwa do ok. 10 s; przeciążony model kończy błędem dopiero po 36–60 s.
+TIMEOUT_S = int(os.getenv("GEMINI_TIMEOUT_S", "30"))
+HTTP_OPTIONS = types.HttpOptions(timeout=TIMEOUT_S * 1000, retry_options=types.HttpRetryOptions(attempts=1))
 
 SYSTEM_PROMPT = """Jesteś Typer AI – asystentem do analizy meczów piłkarskiej Ekstraklasy i zakładów sportowych.
 Odpowiadasz po polsku, rzeczowo i zwięźle. Gdy porównujesz liczby, używasz krótkiej listy lub tabeli.
