@@ -26,3 +26,6 @@ data/*.log
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Pamięć podręczna walidacji (liczona z bazy)
+evaluation/cache/
