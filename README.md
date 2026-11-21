@@ -50,6 +50,8 @@ Szczegóły: [rozdz. 1.6](docs/01-koncepcja.md#16-definicja-sukcesu-dlaczego-tra
 | 11 | [Plan prac](docs/11-plan-prac.md) | etapy, podział zadań, ryzyka, scenariusz demo |
 | 12 | [Słownik](docs/12-slownik.md) | pojęcia bukmacherskie, statystyczne i NLP |
 
+**Współpraca:** [CONTRIBUTING.md](CONTRIBUTING.md) (przygotowanie komputera, role komputerów, codzienna praca) · [docs/DZIENNIK.md](docs/DZIENNIK.md) (dziennik decyzji) · [przeniesienie harmonogramu na komputer domowy](docs/harmonogram-komputer-domowy.md)
+
 ## Uruchomienie
 
 ```bash

@@ -212,7 +212,33 @@ def init_db(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def backup(dest: Path | str, src: Path | str | None = None) -> Path:
+    """Spójna kopia bazy (także gdy harmonogram w tej chwili do niej pisze) – API backup SQLite.
+
+    Zwykłe skopiowanie pliku typer.db w trakcie zapisu może dać uszkodzoną kopię (tryb WAL trzyma
+    część zmian w osobnym pliku typer.db-wal).
+    """
+    dest = Path(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    source = connect(src)
+    target = sqlite3.connect(dest)
+    try:
+        source.backup(target)
+    finally:
+        target.close()
+        source.close()
+    return dest
+
+
 if __name__ == "__main__":
-    with connect() as c:
-        init_db(c)
-    print(f"Baza gotowa: {config.DB_PATH}")
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Inicjalizacja bazy albo jej spójna kopia.")
+    parser.add_argument("--backup", metavar="PLIK", help="zapisz spójną kopię bazy do pliku, np. data/typer_kopia.db")
+    args = parser.parse_args()
+    if args.backup:
+        print(f"Kopia bazy: {backup(args.backup)}")
+    else:
+        with connect() as c:
+            init_db(c)
+        print(f"Baza gotowa: {config.DB_PATH}")
