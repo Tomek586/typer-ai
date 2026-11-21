@@ -6,7 +6,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 - [ ] Imiona i nazwiska zespołu w README, prezentacji i dokumentacji (teraz `[Imię Nazwisko]`).
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
-- [ ] Przeniesienie harmonogramu z laptopa na komputer domowy ([instrukcja](harmonogram-komputer-domowy.md)).
+- [ ] Przeniesienie harmonogramu na komputer domowy ([instrukcja](harmonogram-komputer-domowy.md)): część 1 zrobiona 21.11 (harmonogram usunięty z laptopa, kopia bazy `data/typer_kopia.db`); **do czasu uruchomienia w domu typy nie są zbierane**.
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
 - [ ] Model v2: siła składu, forma, H2H, derby, motywacja, zmęczenie; każda cecha zostaje tylko, jeśli poprawia backtest.
 - [ ] Newsy: wykrywanie kontuzji i zawieszeń (Jev lub LLM), przewidywany skład.
@@ -16,6 +16,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-21
 
+- **Harmonogram usunięty z laptopa**, kopia bazy zrobiona (4215 meczów, 43 122 kursy, integralność OK). Od startu 8.11 harmonogram nie wydał ani jednego typu – reguły (p ≥ 52%, EV ≥ 3%, kurs 1,50–2,30) przy mieszance 85% rynku rzadko są spełnione; do przeanalizowania przy modelu v2.
 - **Praca na 3 komputerach (laptop, komputer domowy, komputer kolegi).** Claude Code nie ma natywnie wspólnego czatu dla dwóch kont; udostępnienie sesji w chmurze to podgląd stanu, bez aktualizacji na żywo. Nieoficjalnych wtyczek do wspólnych sesji nie używamy: polecenia drugiej osoby wykonywałyby się na cudzym komputerze. **Wspólny kontekst = repozytorium:** `CLAUDE.md`, ten dziennik, `docs/`. Zasady w [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Harmonogram ma działać na komputerze domowym**, nie na laptopie: laptop jest noszony i usypiany, więc gubi etapy przed meczami.
 - **Dodano `python -m typerai.db --backup PLIK`:** spójna kopia bazy także w trakcie pracy harmonogramu (zwykłe kopiowanie pliku w trybie WAL może dać uszkodzoną kopię).
