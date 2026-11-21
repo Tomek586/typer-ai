@@ -46,7 +46,7 @@ Kandydat to para (mecz, rynek), która spełnia **wszystkie** reguły:
 
 | # | Reguła | Wartość startowa | Cel |
 |---|---|---|---|
-| R1 | `EV ≥ EV_min` | 0,03 | przewaga nad rynkiem → ROI > 0 |
+| R1 | `EV ≥ EV_min` | 0,01 (od 21.11.2026; wcześniej 0,03) | przewaga nad rynkiem → ROI > 0 |
 | R2 | `p_final ≥ p_min` | 0,52 | zapas ponad 50% na błąd kalibracji → trafność > 50% |
 | R3 | `o_min ≤ kurs ≤ o_max` | 1,50 – 2,30 | razem z R2 wymusza rozsądne value; wyklucza „pułapki” niskich kursów |
 | R4 | `EV ≤ EV_max` | 0,25 | podejrzanie duże EV zwykle oznacza błąd danych (zły skład, zła linia) |
@@ -109,6 +109,7 @@ Dodatkowo raportujemy strategie pomocnicze, które pokazują wartość informacj
 | S1-WSZYSTKIE | wstępne | etap 1 | czy warto obstawiać wcześnie, bez czekania na składy |
 | S1-POTWIERDZONE | wstępne, później potwierdzone | etap 1 | górna granica: wczesny kurs + pełna informacja (nierealna w praktyce) |
 | S-NOGATE | spełniające reguły w etapie 2, bez bramki | etap 2 | wartość bramki Jev (rozdz. 6.5.1) |
+| **S-CIEŃ** | spełniające **łagodniejsze reguły** (`config.SHADOW_RULES`: EV ≥ 0%, p ≥ 45%, kurs 1,50–3,00), jeden na mecz, z własnym etapem 1 i 2 (statusy `CIEN`, `CIEN_POTWIERDZONY`, `CIEN_ANULOWANY`) | etap 2 | większa próbka do oceny modelu (trafność, ROI, CLV); **nie wchodzi do wyniku oficjalnego** |
 
 ## 7.5 Stawki
 

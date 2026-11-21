@@ -37,5 +37,6 @@ def test_recurring_needs_two_groups(tmp_path):
 
 
 def test_minimum_odds():
-    assert value.minimum_odds(0.5) == 2.06   # (1 + 0,03) / 0,5
+    assert value.minimum_odds(0.5, ev_min=0.03) == 2.06   # (1 + 0,03) / 0,5
     assert value.minimum_odds(0.5, ev_min=0.0) == 2.0
+    assert value.minimum_odds(0.5) == round((1 + value.config.RULES["ev_min"]) / 0.5, 2)  # domyślnie próg oficjalny

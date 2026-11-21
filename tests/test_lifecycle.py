@@ -49,22 +49,32 @@ def add_odds(conn, match_id, taken, home_best, others=1.70):
     conn.commit()
 
 
+def official(items):
+    return [{k: v for k, v in i.items() if k != "strategia"} for i in items if i["strategia"] == "oficjalna"]
+
+
+def pick_with_status(conn, *statuses):
+    marks = ",".join("?" * len(statuses))
+    return conn.execute(f"SELECT * FROM pick WHERE status IN ({marks})", statuses).fetchone()
+
+
 def test_full_cycle_confirmed_then_settled(tmp_path):
     conn, match_id = setup_db(tmp_path)
     add_odds(conn, match_id, NOW - timedelta(minutes=5), home_best=1.78)
 
     issued = lifecycle.stage1(conn, NOW)
-    assert [i["market"] for i in issued] == ["1X2:1"]
-    assert lifecycle.stage1(conn, NOW) == []  # drugi przebieg nie dubluje typu
+    assert [i["market"] for i in official(issued)] == ["1X2:1"]
+    assert {i["strategia"] for i in issued} == {"oficjalna", "cien"}   # strategia „cień” też wydaje typ
+    assert lifecycle.stage1(conn, NOW) == []  # drugi przebieg nie dubluje typów
 
     stage2_time = KICKOFF - timedelta(minutes=60)
     add_odds(conn, match_id, stage2_time - timedelta(minutes=2), home_best=1.76)
     decisions = lifecycle.stage2(conn, stage2_time)
-    assert decisions == [{"match_id": match_id, "market": "1X2:1", "status": "POTWIERDZONY", "odds": 1.76}]
+    assert official(decisions) == [{"match_id": match_id, "market": "1X2:1", "status": "POTWIERDZONY", "odds": 1.76}]
 
     conn.execute("UPDATE match SET hg = 2, ag = 0, status = 'finished' WHERE id = ?", (match_id,))
-    assert settle.settle_picks(conn) == 1
-    pick = conn.execute("SELECT * FROM pick").fetchone()
+    assert settle.settle_picks(conn) == 2
+    pick = pick_with_status(conn, "POTWIERDZONY")
     assert (pick["outcome"], round(pick["profit"], 2), pick["odds_closing"]) == ("WIN", 0.76, 1.62)
 
 
@@ -74,10 +84,19 @@ def test_stage2_cancels_when_value_disappears(tmp_path):
     lifecycle.stage1(conn, NOW)
 
     stage2_time = KICKOFF - timedelta(minutes=60)
-    add_odds(conn, match_id, stage2_time - timedelta(minutes=2), home_best=1.64, others=1.63)  # kursy spadły u wszystkich
-    assert lifecycle.stage2(conn, stage2_time)[0]["status"] == "ANULOWANY"
+    add_odds(conn, match_id, stage2_time - timedelta(minutes=2), home_best=1.60, others=1.59)  # kursy spadły u wszystkich
+    assert official(lifecycle.stage2(conn, stage2_time))[0]["status"] == "ANULOWANY"
 
     conn.execute("UPDATE match SET hg = 0, ag = 1, status = 'finished' WHERE id = ?", (match_id,))
     settle.settle_picks(conn)
-    pick = conn.execute("SELECT outcome, profit FROM pick").fetchone()
-    assert (pick["outcome"], pick["profit"]) == ("LOSS", None)  # anulowany nie wchodzi do wyniku oficjalnego
+    pick = pick_with_status(conn, "ANULOWANY")
+    assert (pick["outcome"], pick["profit"]) == ("LOSS", None)  # anulowany nie wchodzi do wyniku
+
+
+def test_shadow_strategy_issues_picks_official_rules_reject(tmp_path):
+    conn, match_id = setup_db(tmp_path)
+    # Kurs bliski uczciwej cenie: za mało na oficjalny typ (EV < 1%), wystarczy na „cień” (EV ≥ 0%)
+    add_odds(conn, match_id, NOW - timedelta(minutes=5), home_best=1.66, others=1.65)
+    issued = lifecycle.stage1(conn, NOW)
+    assert official(issued) == []
+    assert [i["strategia"] for i in issued] == ["cien"]

@@ -11,6 +11,7 @@ from typerai import config
 from typerai.markets import profit, settle
 
 OFFICIAL = ("POTWIERDZONY", "POTWIERDZONY_POZNO")
+SHADOW_CONFIRMED = ("CIEN_POTWIERDZONY",)
 
 
 def closing_reference_odds(conn: sqlite3.Connection, match_id: int, market: str, kickoff: str) -> float | None:
@@ -29,10 +30,11 @@ def settle_picks(conn: sqlite3.Connection) -> int:
            WHERE p.outcome IS NULL AND m.status = 'finished' AND m.hg IS NOT NULL""").fetchall()
     for r in rows:
         outcome = settle(r["market"], r["hg"], r["ag"])
-        official_profit = profit(outcome, r["odds_stage2"]) if r["status"] in OFFICIAL else None
+        # zysk liczymy dla typów potwierdzonych obu strategii; raport rozdziela je po statusie
+        pick_profit = profit(outcome, r["odds_stage2"]) if r["status"] in OFFICIAL + SHADOW_CONFIRMED else None
         conn.execute(
             "UPDATE pick SET outcome = ?, profit = ?, odds_closing = ? WHERE id = ?",
-            (outcome.value, official_profit,
+            (outcome.value, pick_profit,
              closing_reference_odds(conn, r["match_id"], r["market"], r["kickoff_utc"]), r["id"]))
     conn.commit()
     return len(rows)

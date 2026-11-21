@@ -30,9 +30,11 @@ def cmd_stage1(conn, now, fetch: bool) -> None:
     if fetch:
         fetch_odds(conn)
     issued = lifecycle.stage1(conn, now)
-    print(f"Etap 1 ({now:%Y-%m-%d %H:%M} UTC): typów wstępnych {len(issued)}")
+    official = [p for p in issued if p["strategia"] == "oficjalna"]
+    print(f"Etap 1 ({now:%Y-%m-%d %H:%M} UTC): typów wstępnych {len(official)}, typów „cień” {len(issued) - len(official)}")
     for p in issued:
-        print(f"  mecz {p['match_id']}: {p['market']} @ {p['odds']} ({p['bookmaker']}), p={p['p']:.3f}, EV={p['ev']:+.3f}")
+        print(f"  [{p['strategia']}] mecz {p['match_id']}: {p['market']} @ {p['odds']} ({p['bookmaker']}), "
+              f"p={p['p']:.3f}, EV={p['ev']:+.3f}")
 
 
 def cmd_stage2(conn, now, fetch: bool) -> None:
@@ -42,7 +44,7 @@ def cmd_stage2(conn, now, fetch: bool) -> None:
     if fetch:
         fetch_odds(conn)
     for d in lifecycle.stage2(conn, now):
-        print(f"  mecz {d['match_id']}: {d['market']} -> {d['status']} {d['odds'] or ''}")
+        print(f"  [{d['strategia']}] mecz {d['match_id']}: {d['market']} -> {d['status']} {d['odds'] or ''}")
 
 
 def cmd_settle(conn, fetch: bool) -> None:
@@ -67,11 +69,15 @@ def cmd_picks(conn) -> None:
         profit = "" if r["profit"] is None else f"{r['profit']:+.2f}"
         print(f"{r['kickoff_utc'][:16]} {r['home']} – {r['away']}: {r['market']} @ {odds} "
               f"[{r['status']}] {r['outcome'] or ''} {profit}")
-    official = [r for r in rows if r["profit"] is not None]
-    if official:
-        wins = sum(r["outcome"] in ("WIN", "HALF_WIN") for r in official)
-        print(f"\nWynik oficjalny: typów {len(official)}, trafnych {wins} ({wins / len(official):.0%}), "
-              f"ROI {sum(r['profit'] for r in official) / len(official):+.1%}")
+    print()
+    for label, statuses in (("Wynik oficjalny", settle.OFFICIAL), ("Strategia „cień” (tylko pomiar)", settle.SHADOW_CONFIRMED)):
+        done = [r for r in rows if r["status"] in statuses and r["profit"] is not None]
+        if not done:
+            print(f"{label}: brak rozliczonych typów")
+            continue
+        wins = sum(r["outcome"] in ("WIN", "HALF_WIN") for r in done)
+        print(f"{label}: typów {len(done)}, trafnych {wins} ({wins / len(done):.0%}), "
+              f"ROI {sum(r['profit'] for r in done) / len(done):+.1%}")
 
 
 def main() -> None:

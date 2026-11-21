@@ -128,10 +128,14 @@ def _final_probability(market: str, matrix: np.ndarray, quotes, w: float) -> tup
     return mixed[k], model[k], fair[k]
 
 
-def candidates(matrix: np.ndarray, quotes: dict[str, list[Quote]], w: float | None = None) -> list[Candidate]:
-    """Wszystkie zdarzenia meczu spełniające reguły R1–R4 i R6 (docs/07, 7.3)."""
+def candidates(matrix: np.ndarray, quotes: dict[str, list[Quote]], w: float | None = None,
+               rules: dict | None = None) -> list[Candidate]:
+    """Wszystkie zdarzenia meczu spełniające reguły R1–R4 i R6 (docs/07, 7.3).
+
+    rules: domyślnie oficjalne (config.RULES); config.SHADOW_RULES dla strategii „cień”.
+    """
     w = config.MODEL["blend_w"] if w is None else w
-    rules = config.RULES
+    rules = config.RULES if rules is None else rules
     out = []
     for market, market_quotes in quotes.items():
         if family(market) not in rules["families"] or not is_half_line(market):

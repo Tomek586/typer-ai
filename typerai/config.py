@@ -29,8 +29,10 @@ MODEL = {
 }
 
 # Reguły wyboru typów (docs/07, sekcja 7.3) – wartości startowe, zamrożone na czas testu na żywo
+# 21.11.2026: EV z 3% na 1% – przy w = 0,15 próg 3% dawał ok. 8 typów na sezon (za mało do oceny celu);
+# waga modelu bez zmian, bo wynika z log-loss (docs/DZIENNIK.md)
 RULES = {
-    "ev_min": 0.03,
+    "ev_min": 0.01,
     "ev_max": 0.25,
     "p_min": 0.52,
     "odds_min": 1.50,
@@ -38,6 +40,10 @@ RULES = {
     "min_team_matches": 5,          # mecze ligowe drużyny w ostatnich 365 dniach
     "families": ["1X2", "DC", "OU", "BTTS", "AH"],
 }
+
+# Strategia „cień” (docs/07, 7.4): typy z łagodniejszymi regułami zapisywane WYŁĄCZNIE do pomiaru modelu.
+# Nie wchodzą do oficjalnego wyniku; dają większą próbkę do oceny trafności, ROI i CLV.
+SHADOW_RULES = {**RULES, "ev_min": 0.0, "p_min": 0.45, "odds_max": 3.00}
 
 # Wybór kursu (docs/03, sekcja 3.3.4)
 ODDS = {

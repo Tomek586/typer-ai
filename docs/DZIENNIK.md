@@ -16,6 +16,14 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-21
 
+- **Analiza braku typów (8–21.11):** trzy przyczyny.
+  1. Laptop spał: etap 1 wykonał się **raz** zamiast ok. 26 razy; etap 2 316 razy, czyli laptop działał ok. 53 h w 13 dni.
+  2. Przerwa na reprezentację: brak meczów Ekstraklasy 9–19.11.
+  3. Reguły: z 70 ocenionych zdarzeń (12 meczów) próg **EV ≥ 3% blokował 69**. Najlepszy kurs spośród ok. 20 bukmacherów jest zwykle **gorszy** od uczciwej ceny Pinnacle (mediana −4,4%, maks. +2,5%), a przy wadze rynku 85% EV ≥ 3% jest prawie nieosiągalne. Założenie, że wybór najlepszego kursu da przewagę, się nie sprawdziło.
+- **Symulacja na sezonach walidacyjnych 2023/24 + 2024/25** (1X2, najlepszy kurs zamknięcia; małe próbki, ostrożnie): obecne reguły 8 typów/sezon (43,8%, ROI −18%); EV ≥ 1% 22/sezon (55,6%, −0,3%); w = 0,3 18/sezon (57,1%, +6,1%); w = 0,5 24/sezon (55,1%, +4,3%); sam model 40/sezon (50%, −6%).
+- **Decyzja: oficjalny próg EV z 3% na 1%**, waga modelu bez zmian (0,15 – wynika z log-loss; zmiana wagi po wyniku ROI byłaby przeuczeniem). Oczekiwanie: ok. 22 typy oficjalne na sezon.
+- **Strategia „cień”** (EV ≥ 0%, p ≥ 45%, kurs 1,50–3,00) zapisywana obok oficjalnej, wyłącznie do pomiaru modelu; na 12 meczach z listopada dałaby 3 typy (oficjalna: 0).
+- **Harmonogram nadrabia pominięte terminy:** etap 1 i rozliczenie wykonają się po wybudzeniu komputera, jeśli ostatni termin przepadł (każda próba, także nieudana, liczy się jako wykonanie, żeby błąd API nie zużywał limitów co minutę).
 - **Harmonogram usunięty z laptopa**, kopia bazy zrobiona (4215 meczów, 43 122 kursy, integralność OK). Od startu 8.11 harmonogram nie wydał ani jednego typu – reguły (p ≥ 52%, EV ≥ 3%, kurs 1,50–2,30) przy mieszance 85% rynku rzadko są spełnione; do przeanalizowania przy modelu v2.
 - **Praca na 3 komputerach (laptop, komputer domowy, komputer kolegi).** Claude Code nie ma natywnie wspólnego czatu dla dwóch kont; udostępnienie sesji w chmurze to podgląd stanu, bez aktualizacji na żywo. Nieoficjalnych wtyczek do wspólnych sesji nie używamy: polecenia drugiej osoby wykonywałyby się na cudzym komputerze. **Wspólny kontekst = repozytorium:** `CLAUDE.md`, ten dziennik, `docs/`. Zasady w [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Harmonogram ma działać na komputerze domowym**, nie na laptopie: laptop jest noszony i usypiany, więc gubi etapy przed meczami.

@@ -4,6 +4,7 @@ Etap 1 (dzień wcześniej / rano): kandydat spełniający reguły -> typ WSTEPNY
 Etap 2 (ok. 60 min przed meczem): ponowne sprawdzenie reguł na świeżych kursach
     -> POTWIERDZONY albo ANULOWANY; nowy kandydat bez typu wstępnego -> POTWIERDZONY_POZNO.
 Model v1 nie ma jeszcze bramki Jev – każdy kandydat jest wydawany (rozdz. 6 dochodzi w etapie 5).
+Równolegle działa strategia „cień” z łagodniejszymi regułami (config.SHADOW_RULES) – tylko do pomiaru.
 """
 
 import sqlite3
@@ -14,6 +15,15 @@ from typerai.betting import value
 from typerai.model import predict as model_predict
 
 OFFICIAL = ("POTWIERDZONY", "POTWIERDZONY_POZNO")
+
+# Strategie typów (docs/07, 7.4): oficjalna liczy się do celu projektu, „cień” służy wyłącznie do pomiaru modelu.
+# rules to funkcje, żeby zmiana konfiguracji (np. w testach) była widoczna bez ponownego importu.
+STRATEGIES = {
+    "oficjalna": {"rules": lambda: config.RULES, "stage1": "WSTEPNY", "open": ("WSTEPNY", "WSTRZYMANY"),
+                  "confirmed": "POTWIERDZONY", "cancelled": "ANULOWANY", "late": "POTWIERDZONY_POZNO"},
+    "cien": {"rules": lambda: config.SHADOW_RULES, "stage1": "CIEN", "open": ("CIEN",),
+             "confirmed": "CIEN_POTWIERDZONY", "cancelled": "CIEN_ANULOWANY", "late": "CIEN_POTWIERDZONY"},
+}
 
 
 def _iso(dt: datetime) -> str:
@@ -51,15 +61,16 @@ def stage1(conn: sqlite3.Connection, now: datetime) -> list[dict]:
         if not _match_ok(conn, m, as_of):
             continue
         quotes = value.latest_quotes(conn, m["id"], as_of, config.ODDS["max_age_stage1_min"])
-        best = value.choose(value.candidates(matrix, quotes))
-        if best is None:
-            continue
-        conn.execute(
-            """INSERT INTO pick (prediction_id, match_id, market, bookmaker, p_model, ev, status, odds_stage1, stage1_at)
-               VALUES (?, ?, ?, ?, ?, ?, 'WSTEPNY', ?, ?)""",
-            (pred_id, m["id"], best.market, best.bookmaker, best.p, best.ev, best.odds, as_of))
-        issued.append({"match_id": m["id"], "market": best.market, "odds": best.odds,
-                       "bookmaker": best.bookmaker, "p": best.p, "ev": best.ev})
+        for name, st in STRATEGIES.items():
+            best = value.choose(value.candidates(matrix, quotes, rules=st["rules"]()))
+            if best is None:
+                continue
+            conn.execute(
+                """INSERT INTO pick (prediction_id, match_id, market, bookmaker, p_model, ev, status, odds_stage1, stage1_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (pred_id, m["id"], best.market, best.bookmaker, best.p, best.ev, st["stage1"], best.odds, as_of))
+            issued.append({"strategia": name, "match_id": m["id"], "market": best.market, "odds": best.odds,
+                           "bookmaker": best.bookmaker, "p": best.p, "ev": best.ev})
     conn.commit()
     return issued
 
@@ -84,29 +95,32 @@ def stage2(conn: sqlite3.Connection, now: datetime) -> list[dict]:
     for m in matches:
         pred_id, matrix = model_predict.predict(conn, model, m["id"], "2", as_of)
         quotes = value.latest_quotes(conn, m["id"], as_of, config.ODDS["max_age_stage2_min"])
-        cands = value.candidates(matrix, quotes) if _match_ok(conn, m, as_of) else []
-        prelim = conn.execute(
-            "SELECT * FROM pick WHERE match_id = ? AND status IN ('WSTEPNY', 'WSTRZYMANY')", (m["id"],)).fetchone()
-        if prelim:
-            same = next((c for c in cands if c.market == prelim["market"]), None)
-            status = "POTWIERDZONY" if same else "ANULOWANY"
-            conn.execute(
-                """UPDATE pick SET status = ?, odds_stage2 = ?, bookmaker_stage2 = ?, p_stage2 = ?, ev_stage2 = ?,
-                       stage2_at = ? WHERE id = ?""",
-                (status, same.odds if same else None, same.bookmaker if same else None,
-                 same.p if same else None, same.ev if same else None, as_of, prelim["id"]))
-            decisions.append({"match_id": m["id"], "market": prelim["market"], "status": status,
-                              "odds": same.odds if same else None})
-            continue
-        best = value.choose(cands)
-        if best:
-            conn.execute(
-                """INSERT INTO pick (prediction_id, match_id, market, bookmaker, p_model, ev, status,
-                       odds_stage2, bookmaker_stage2, p_stage2, ev_stage2, stage2_at)
-                   VALUES (?, ?, ?, ?, ?, ?, 'POTWIERDZONY_POZNO', ?, ?, ?, ?, ?)""",
-                (pred_id, m["id"], best.market, best.bookmaker, best.p, best.ev,
-                 best.odds, best.bookmaker, best.p, best.ev, as_of))
-            decisions.append({"match_id": m["id"], "market": best.market, "status": "POTWIERDZONY_POZNO",
-                              "odds": best.odds})
+        ok = _match_ok(conn, m, as_of)
+        for name, st in STRATEGIES.items():
+            cands = value.candidates(matrix, quotes, rules=st["rules"]()) if ok else []
+            placeholders = ",".join("?" * len(st["open"]))
+            prelim = conn.execute(f"SELECT * FROM pick WHERE match_id = ? AND status IN ({placeholders})",
+                                  (m["id"], *st["open"])).fetchone()
+            if prelim:
+                same = next((c for c in cands if c.market == prelim["market"]), None)
+                status = st["confirmed"] if same else st["cancelled"]
+                conn.execute(
+                    """UPDATE pick SET status = ?, odds_stage2 = ?, bookmaker_stage2 = ?, p_stage2 = ?, ev_stage2 = ?,
+                           stage2_at = ? WHERE id = ?""",
+                    (status, same.odds if same else None, same.bookmaker if same else None,
+                     same.p if same else None, same.ev if same else None, as_of, prelim["id"]))
+                decisions.append({"strategia": name, "match_id": m["id"], "market": prelim["market"],
+                                  "status": status, "odds": same.odds if same else None})
+                continue
+            best = value.choose(cands)
+            if best:
+                conn.execute(
+                    """INSERT INTO pick (prediction_id, match_id, market, bookmaker, p_model, ev, status,
+                           odds_stage2, bookmaker_stage2, p_stage2, ev_stage2, stage2_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (pred_id, m["id"], best.market, best.bookmaker, best.p, best.ev, st["late"],
+                     best.odds, best.bookmaker, best.p, best.ev, as_of))
+                decisions.append({"strategia": name, "match_id": m["id"], "market": best.market,
+                                  "status": st["late"], "odds": best.odds})
     conn.commit()
     return decisions

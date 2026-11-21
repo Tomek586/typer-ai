@@ -2,12 +2,13 @@
 
 Proces działa w tle i co minutę sprawdza, czy któreś zadanie powinno się wykonać.
 Godziny podane są w czasie polskim. Każde uruchomienie zapisuje się w tabeli JOB_RUN.
+Zadania o stałych godzinach są NADRABIANE: jeśli komputer spał o 9:00, etap 1 wykona się po wybudzeniu.
 """
 
 import sys
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from typerai import config, db
@@ -55,6 +56,39 @@ def due(name: str, local: datetime) -> bool:
     return local.minute % job["every_min"] == 0
 
 
+def last_slot(name: str, local: datetime) -> datetime | None:
+    """Ostatni zaplanowany termin zadania o stałych godzinach, nie późniejszy niż `local` (dziś albo wczoraj)."""
+    job = JOBS[name]
+    if "at" not in job:
+        return None
+    slots = []
+    for day in (local.date(), local.date() - timedelta(days=1)):
+        for hhmm in job["at"]:
+            h, m = map(int, hhmm.split(":"))
+            slot = datetime(day.year, day.month, day.day, h, m, tzinfo=local.tzinfo)
+            if slot <= local:
+                slots.append(slot)
+    return max(slots) if slots else None
+
+
+def missed(name: str, local: datetime, last_run: datetime | None) -> bool:
+    """Czy ostatni termin zadania przepadł (np. komputer był uśpiony) i trzeba go nadrobić.
+
+    Liczy się każda próba, także zakończona błędem – inaczej przy awarii API zadanie ponawiałoby się co minutę
+    i zużywało limity. Po błędzie czekamy do następnego terminu.
+    """
+    slot = last_slot(name, local)
+    return slot is not None and (last_run is None or last_run < slot)
+
+
+def _last_run(name: str) -> datetime | None:
+    conn = db.connect()
+    db.init_db(conn)
+    row = conn.execute("SELECT MAX(started_at) FROM job_run WHERE job = ?", (name,)).fetchone()
+    conn.close()
+    return datetime.fromisoformat(row[0]) if row and row[0] else None
+
+
 def _log_to_file_without_console() -> None:
     """Uruchomiony przez pythonw.exe (Harmonogram zadań Windows) nie ma konsoli – piszemy do pliku."""
     if sys.stdout is None or sys.stderr is None:
@@ -71,8 +105,10 @@ def main() -> None:
         if local != last_minute:
             last_minute = local
             for name in JOBS:
-                if due(name, local):
-                    print(f"[{local:%Y-%m-%d %H:%M}] {name}", flush=True)
+                catch_up = not due(name, local) and missed(name, local, _last_run(name))
+                if due(name, local) or catch_up:
+                    print(f"[{local:%Y-%m-%d %H:%M}] {name}{' (nadrabianie pominiętego terminu)' if catch_up else ''}",
+                          flush=True)
                     _run(name)
         time.sleep(15)
 
