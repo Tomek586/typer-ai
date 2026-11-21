@@ -21,6 +21,8 @@ JOBS = {
     "stage1": {"at": ["09:00", "18:00"]},
     "stage2": {"every_min": 10},
     "settle": {"at": ["10:30", "23:45"]},
+    # newsy co 2 godziny w ciągu dnia (docs/05, 5.2): pobranie RSS + klasyfikacja do 10 artykułów przez LLM
+    "news": {"at": ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"]},
 }
 
 
@@ -40,6 +42,12 @@ def _run(name: str) -> None:
         elif name == "settle":
             cmd_settle(conn, fetch=True)   # zamyka własne połączenie
             conn = db.connect()
+        elif name == "news":
+            from typerai.collectors import news
+            from typerai.decision.engine import LLMEngine
+            from typerai.news import extract
+            print(f"Newsy: {news.collect(conn, now)}", flush=True)
+            print(f"Fakty: {extract.process(conn, LLMEngine(log=conn), config.NEWS['max_classify_per_run'])}", flush=True)
     except Exception:                      # błąd jednego zadania nie zatrzymuje harmonogramu
         status, error = "error", traceback.format_exc()
         print(error)

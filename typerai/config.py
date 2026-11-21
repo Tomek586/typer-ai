@@ -60,3 +60,33 @@ STAGES = {
     "stage1_horizon_h": 36,
     "stage2_window_min": (45, 75),
 }
+
+# ---------------------------------------------------------------- newsy (docs/05)
+# Kanały RSS sprawdzone 21.11.2026: robots.txt nie blokuje zwykłych botów. Regulaminy serwisów (zastrzeżenia
+# eksploracji tekstu i danych) sprawdza zespół – źródło z zakazem usuwamy z listy.
+NEWS_SOURCES = [
+    {"name": "sportowefakty", "feed": "https://sportowefakty.wp.pl/pilka-nozna/ekstraklasa/rss.xml", "reliability": "medialne"},
+    {"name": "interia", "feed": "https://sport.interia.pl/pilka-nozna/ekstraklasa/feed", "reliability": "medialne"},
+    {"name": "tvp-sport", "feed": "https://sport.tvp.pl/rss", "reliability": "medialne"},
+    {"name": "sport-pl", "feed": "https://www.sport.pl/pub/rss/sport.htm", "reliability": "medialne"},
+    {"name": "weszlo", "feed": "https://weszlo.com/feed/", "reliability": "medialne"},
+]
+NEWS = {
+    "max_age_days": 7,          # starsze artykuły pomijamy
+    "min_chars": 300,           # krótszy tekst = sam tytuł lub zajawka
+    "request_delay_s": 2.0,     # przerwa między pobraniami artykułów z jednego serwisu
+    "simhash_max_distance": 3,  # odległość Hamminga ≤ 3 = duplikat
+    "dedup_hours": 48,          # z iloma godzinami wstecz porównujemy duplikaty
+    "max_classify_per_run": 10, # artykułów klasyfikowanych przez LLM w jednym przebiegu (darmowe limity Gemini)
+}
+# Wstępny filtr: rdzenie nazw drużyn w polskiej odmianie („Legii”, „Lechem”, „Rakowa”). Pułapki: Lechia to nie Lech,
+# „Wisła” bez miasta może oznaczać obie Wisły (rozstrzyga klasyfikacja LLM).
+NEWS_TEAM_PATTERNS = {
+    "cracovia": r"\bCracovi", "gks-katowice": r"\bGKS(?:-u|-ie)? Katowice|\bGieKS", "gornik-zabrze": r"\bG[óo]rnik",
+    "jagiellonia": r"\bJagielloni|\bJag[aięą]\b", "korona": r"\bKoron[aiyęą]\b|\bKorona Kielce", "lech": r"\bLech(?!i)\w*|\bKolejorz",
+    "legia": r"\bLegi[aięąo]|\bWojskow", "motor": r"\bMotor(?:a|em|u|ze)?\s+Lublin|\bMotor(?:u|em)?\b",
+    "piast": r"\bPiast", "pogon": r"\bPogo[nń]|\bPortowc", "radomiak": r"\bRadomiak", "rakow": r"\bRak[oó]w",
+    "slask": r"\b[ŚS]l[ąa]sk(?:a|iem|u)?\b", "widzew": r"\bWidzew",
+    "wieczysta": r"\bWieczyst", "wisla-krakow": r"\bWis[łl]\w* Krak|\bBia[łl]\w* Gwiazd|\bWis[łl][aąyę]\b(?! P[łl]ock)",
+    "wisla-plock": r"\bWis[łl]\w* P[łl]ock|\bNafciarz", "zaglebie-lubin": r"\bZag[łl][ęe]bi",
+}
