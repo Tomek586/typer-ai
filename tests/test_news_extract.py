@@ -145,3 +145,22 @@ def test_process_stops_quietly_when_engine_is_unavailable(conn):
     stats = extract.process(conn, OverloadedEngine(), limit=10)
     assert stats["artykulow"] == 0 and "503" in stats["przerwano"]
     assert len(extract.pending(conn, 10)) == 2                         # artykuły czekają na następny przebieg
+
+
+def test_news_tool_and_report_show_active_facts(conn, monkeypatch, tmp_path):
+    from typerai import report
+    from typerai.chat import tools
+
+    extract.save_fact(conn, fact(category="coach_change", status=None, player=None, certainty="official"), 1, PUBLISHED)
+    conn.execute("UPDATE news_article SET title = 'Lech: nowy trener', published_at = '2026-11-20T09:00+00:00' WHERE id = 1")
+    conn.commit()
+    monkeypatch.setattr(tools, "_conn", lambda: conn)
+    monkeypatch.setattr(tools, "_now", lambda: extract.datetime(2026, 11, 21, 12, 0, tzinfo=extract.timezone.utc))
+    out = tools.newsy("Lech Poznań")
+    assert out["fakty"][0]["kategoria"] == "zmiana trenera" and out["fakty"][0]["pewnosc"] == "oficjalne"
+    assert [a["tytul"] for a in out["artykuly"]] == ["Lech: nowy trener"]
+    now = extract.datetime(2026, 11, 21, 12, 0, tzinfo=extract.timezone.utc)
+    facts = report.news_facts(conn, now)
+    assert facts[0]["kategoria"] == "zmiana trenera" and facts[0]["pewność"] == "oficjalne"
+    statuses = {a["tytuł"]: a["status"] for a in report.news_articles(conn, now=now)}
+    assert statuses["Lech: nowy trener"] == "czeka na klasyfikację"

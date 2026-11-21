@@ -147,12 +147,58 @@ def analiza_meczu(gospodarz: str, gosc: str) -> dict:
         "oczekiwane_gole_modelu": {"gospodarz": round(lh, 2), "gosc": round(la, 2)},
         "rynki": rynki,
         "trendy": trends.match_trends(conn, home_id, away_id, match["kickoff_utc"]),
+        "newsy": {"gospodarz": _facts(conn, home_id, as_of, 3), "gosc": _facts(conn, away_id, as_of, 3)},
         "typ": None if best_pick is None else {
             "zdarzenie": best_pick.market, "kurs": best_pick.odds, "bukmacher": best_pick.bookmaker,
             "p": round(best_pick.p, 3), "ev": round(best_pick.ev, 3)},
         "reguly_typu": f"oficjalny typ tylko gdy p ≥ {config.RULES['p_min']}, EV ≥ {config.RULES['ev_min']:.0%}, "
                        f"kurs {config.RULES['odds_min']}–{config.RULES['odds_max']}",
     }
+
+
+CATEGORY_PL = {"injury": "kontuzja", "suspension": "zawieszenie", "return": "powrót do składu",
+               "coach_change": "zmiana trenera", "club_crisis": "kryzys w klubie", "fatigue_schedule": "zmęczenie, terminarz",
+               "motivation_context": "stawka meczu", "match_conditions": "warunki meczu"}
+STATUS_PL = {"out": "nie zagra", "doubtful": "niepewny występ", "available": "dostępny"}
+CERTAINTY_PL = {"official": "oficjalne", "reported": "doniesienia mediów", "speculation": "spekulacja"}
+
+
+def _facts(conn, team_id: str, as_of: str, limit: int = 5) -> list[dict]:
+    """Aktywne fakty z newsów o drużynie (docs/05, 5.6), od największego wpływu."""
+    from typerai.news import extract
+
+    return [{"kategoria": CATEGORY_PL.get(f["category"], f["category"]), "zawodnik": f["player"],
+             "status": STATUS_PL.get(f["status"]), "wplyw_0_4": f["impact"],
+             "pewnosc": CERTAINTY_PL.get(f["certainty"], f["certainty"]), "od": _local(f["valid_from"]),
+             "zrodlo": f["title"], "url": f["url"]} for f in extract.active_facts(conn, team_id, as_of)[:limit]]
+
+
+def newsy(druzyna: str, dni: int = 7) -> dict:
+    """Aktualne informacje z newsów o drużynie: kontuzje, zawieszenia, powroty, zmiana trenera, kryzys w klubie
+    (fakty wyciągnięte z artykułów, z oceną pewności i źródłem) oraz tytuły ostatnich artykułów o drużynie.
+
+    Args:
+        druzyna: nazwa drużyny, np. "Lech Poznań", "Legia", "Kolejorz"
+        dni: z ilu ostatnich dni pokazać artykuły (domyślnie 7)
+    """
+    from typerai.collectors.news import TEAM_PATTERNS
+
+    conn = _conn()
+    try:
+        team_id = teams.resolve(druzyna)
+    except KeyError:
+        return {"blad": f"Nie znam drużyny '{druzyna}'", "podobne": teams.suggest(druzyna)}
+    now = _now()
+    since = (now - timedelta(days=dni)).isoformat(timespec="minutes")
+    pattern = TEAM_PATTERNS.get(team_id)
+    artykuly = [{"tytul": r["title"], "zrodlo": r["source"], "data": _local(r["published_at"]), "url": r["url"]}
+                for r in conn.execute(
+                    """SELECT title, source, published_at, url FROM news_article
+                       WHERE published_at >= ? AND duplicate_of IS NULL ORDER BY published_at DESC""", (since,))
+                if pattern and pattern.search(r["title"])][:8]
+    return {"druzyna": _team_name(conn, team_id), "fakty": _facts(conn, team_id, now.isoformat(timespec="minutes")),
+            "artykuly": artykuly,
+            "uwaga": "Fakty z newsów to kontekst: nie zmieniają prawdopodobieństw modelu ani typów."}
 
 
 def przelicz_kurs(kursy: list[float]) -> dict:
@@ -182,4 +228,4 @@ def typy() -> dict:
     return {"typy": lista, "liczba": len(lista)}
 
 
-TOOLS = [terminarz, forma_druzyny, analiza_meczu, przelicz_kurs, typy]
+TOOLS = [terminarz, forma_druzyny, analiza_meczu, newsy, przelicz_kurs, typy]

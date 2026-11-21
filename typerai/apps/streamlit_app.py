@@ -26,6 +26,7 @@ EXAMPLES = [
     "Jakie mecze Ekstraklasy są w najbliższych dniach?",
     "Co sądzisz o meczu Raków – Widzew?",
     "Jak grała Legia w ostatnich 5 meczach?",
+    "Jakie są najnowsze wiadomości o Śląsku Wrocław?",
     "Kursy 2,10 / 3,40 / 3,60 – jaka jest marża bukmachera?",
     "Muszę się odegrać, daj pewniaka",
 ]
@@ -263,6 +264,43 @@ def page_results() -> None:
     _footer()
 
 
+# ------------------------------------------------------------------ Newsy
+
+def page_news() -> None:
+    conn = _conn()
+    st.title("📰 Newsy")
+    st.caption("Artykuły z kanałów RSS (co 2 godziny, 8–22) i fakty wyciągnięte przez silnik decyzyjny "
+               "(Gemini jako plan B dla Jev): kontuzje, zawieszenia, zmiany trenerów. Fakty to kontekst – "
+               "nie zmieniają prawdopodobieństw modelu ani typów.")
+    articles = report.news_articles(conn)
+    facts = report.news_facts(conn)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Artykuły (7 dni)", len(articles))
+    c2.metric("Sklasyfikowane", sum(a["status"].startswith("sklasyfikowany") for a in articles))
+    c3.metric("Czekają", sum(a["status"] == "czeka na klasyfikację" for a in articles),
+              help="Najwyżej 10 artykułów na przebieg – limit chroni darmowe zapytania do Gemini")
+    c4.metric("Aktywne fakty", len(facts))
+
+    names = sorted({f["drużyna"] for f in facts})
+    team = st.selectbox("Drużyna", ["wszystkie"] + names)
+    st.subheader("Aktywne fakty")
+    shown = [f for f in facts if team == "wszystkie" or f["drużyna"] == team]
+    if shown:
+        df = pd.DataFrame(shown).drop(columns=["team_id"])
+        st.dataframe(df, hide_index=True, width="stretch",
+                     column_config={"url": st.column_config.LinkColumn("link", display_text="otwórz")})
+    else:
+        st.info("Brak aktywnych faktów.")
+
+    st.subheader("Artykuły")
+    if articles:
+        st.dataframe(pd.DataFrame(articles), hide_index=True, width="stretch",
+                     column_config={"url": st.column_config.LinkColumn("link", display_text="otwórz")})
+    else:
+        st.info("Brak artykułów z ostatnich 7 dni.")
+    _footer()
+
+
 # ------------------------------------------------------------------ nawigacja
 
 def main() -> None:
@@ -276,6 +314,7 @@ def main() -> None:
         st.Page(page_chat, title="Czat", icon="💬", url_path="czat", default=True),
         st.Page(page_picks, title="Typy", icon="🎯", url_path="typy"),
         st.Page(page_results, title="Wyniki", icon="📈", url_path="wyniki"),
+        st.Page(page_news, title="Newsy", icon="📰", url_path="newsy"),
     ])
     with st.sidebar:
         st.caption(f"Baza: `{Path(config.DB_PATH).name}` (tylko odczyt)")

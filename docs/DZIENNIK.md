@@ -11,13 +11,14 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 - [ ] Model v2: krok 1 i diagnoza składu zrobione 21.11 (wpisy niżej). Ratingi Elo/pi i motywacja sprawdzone 21.11 (bez zysku); stabilny zysk daje tylko forma. Do decyzji: czy wdrożyć v1 + forma w trakcie testu na żywo. Niesprawdzone: derby (brak listy par w repozytorium), puchary (brak terminarza pucharów); każda cecha oceniana „każdy sezon po kolei” (9 sezonów) i zostaje tylko, jeśli poprawia wynik.
 - [ ] Regulaminy serwisów newsowych (Sportowe Fakty/WP, Interia, TVP Sport, Sport.pl/Agora, Weszło): sprawdzić zastrzeżenia eksploracji tekstu i danych (TDM); serwis z zakazem usuwamy z `config.NEWS_SOURCES`.
 - [ ] Newsy: pobieranie i fakty działają od 21.11; zostaje przewidywany skład z faktów, kontekst dla bramki i czatu, RAG, zbiór 150 artykułów do oceny.
-- [ ] RAG, ocena NLP; aplikacja: strony „Mecz”, „Newsy”, „Decyzje Jev”, „System” (Czat, Typy, Wyniki gotowe 21.11).
+- [ ] RAG, ocena NLP; aplikacja: strony „Mecz”, „Decyzje Jev”, „System” (Czat, Typy, Wyniki, Newsy gotowe 21.11).
 - [ ] Jakość odpowiedzi modeli „lite” vs `3.5-flash` (od 21.11 domyślnie „lite”): porównać na zbiorze pytań testowych przy ewaluacji NLP.
 
 ---
 
 ## 2026-11-21
 
+- **Newsy w czacie i aplikacji:** narzędzie czatu `newsy` (aktywne fakty z pewnością i źródłem + tytuły ostatnich artykułów), fakty obu drużyn w wyniku `analiza_meczu` (pole `newsy`), reguła 14 w prompcie (podawaj pewność i źródło; newsy nie zmieniają prawdopodobieństw ani typów), strona aplikacji „Newsy” i sekcja 3.5 w notebooku. Sprawdzone: pytanie o Śląsk → narzędzie `newsy`, odpowiedź w 2,1 s ze źródłem. Uwaga: „Lech” bez „Poznań” nie jest aliasem drużyny w `teams.py` (tylko „Kolejorz”) – do uzupełnienia aliasów.
 - **Pipeline newsów (docs/05), pierwsza wersja.**
   - **Źródła:** kanały RSS Sportowych Faktów (Ekstraklasa), Interii (Ekstraklasa), TVP Sport, Sport.pl i Weszło (`config.NEWS_SOURCES`). Sprawdzone 21.11: robots.txt żadnego z nich nie blokuje zwykłych botów; Meczyki, Onet (Ekstraklasa) i strony klubów nie mają działającego RSS.
   - **Decyzja: pobieramy pełne artykuły** (trafilatura), ale tylko te, w których tytuł lub zajawka wspomina drużynę Ekstraklasy (wzorce odmiany nazw, np. „Legii”, „Lechem”, z wykluczeniem Lechii). Przed każdym pobraniem sprawdzany jest robots.txt, między zapytaniami do serwisu 2 s przerwy. Regulaminy serwisów (zastrzeżenia TDM) sprawdza zespół – otwarta sprawa wyżej.

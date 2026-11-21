@@ -6,7 +6,7 @@ Oba interfejsy korzystają z tego samego potoku czatu (`typerai/chat/`) i tych s
 
 Uruchomienie: `streamlit run typerai/apps/streamlit_app.py` (zależności: `pip install -e ".[app]"`)
 
-**Stan (21.11.2026):** gotowe strony **Czat**, **Typy** i **Wyniki** (pierwsza wersja). Strona „Typy” ma dodatkowo tabelę „dlaczego jest albo nie ma typu” dla najbliższych meczów (model, rynek, mieszanka, najlepszy kurs, EV). Aplikacja czyta bazę wyłącznie w trybie read-only (`typerai/report.py`).
+**Stan (21.11.2026):** gotowe strony **Czat**, **Typy**, **Wyniki** i **Newsy** (pierwsza wersja; Newsy bez ręcznej korekty etykiet). Strona „Typy” ma dodatkowo tabelę „dlaczego jest albo nie ma typu” dla najbliższych meczów (model, rynek, mieszanka, najlepszy kurs, EV). Aplikacja czyta bazę wyłącznie w trybie read-only (`typerai/report.py`).
 
 | Strona | Zawartość | Dla kogo |
 |---|---|---|
