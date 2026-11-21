@@ -78,3 +78,22 @@ def test_glm_ratio_is_clipped():
     assert model.ratio(np.array([[10.0]]))[0] == glm.RATIO_MAX
     assert model.ratio(np.array([[-10.0]]))[0] == glm.RATIO_MIN
     assert model.contributions([1.0]) == {"a": 5.0}
+
+
+def test_season_rounds_follow_league_format():
+    assert features.season_rounds("2017/18", 16) == 37      # ESA-37
+    assert features.season_rounds("2020/21", 16) == 30
+    assert features.season_rounds("2026/27", 18) == 34
+
+
+def test_motivation_from_table():
+    # 18 drużyn, 3 spadają, 3 miejsca pucharowe; punkty: t0 = 60, t1 = 59, …, t17 = 43
+    points = {f"t{i}": 60.0 - i for i in range(18)}
+    early = features.motivation(points, "t16", rounds_left=20, n_relegated=3)
+    assert early == {"releg_pressure": 0.0, "euro_pressure": 0.0, "nothing_to_play": 0.0}
+    late = features.motivation(points, "t14", rounds_left=4, n_relegated=3)  # 1 pkt nad strefą (t15 = 45)
+    assert late["releg_pressure"] == pytest.approx(1 - 1 / 12)
+    assert features.motivation(points, "t16", 4, 3)["releg_pressure"] == 1.0    # w strefie spadkowej
+    assert features.motivation(points, "t0", 4, 3)["euro_pressure"] == 1.0      # lider
+    spread = {f"t{i}": 100.0 - 5 * i for i in range(18)}                       # duże różnice punktowe
+    assert features.motivation(spread, "t8", 2, 3)["nothing_to_play"] == 1.0

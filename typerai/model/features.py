@@ -10,6 +10,7 @@ Siła składu (4.4.1) w dwóch wariantach:
                bez newsów (realistyczny wariant do typów, dopóki nie ma składu przewidywanego).
 """
 
+import math
 import sqlite3
 from collections import defaultdict, deque
 from datetime import datetime
@@ -25,6 +26,15 @@ LINEUP_HALF_LIFE = None  # półokres wag meczów w oknie składu (None = równe
                          # „przestawiają” skład referencyjny po transferach i zmianie bramkarza
 REST_CAP = 10            # dni odpoczynku obcinane do 10
 ELO_PARAMS = {"k": elo.K, "hfa": elo.HFA}
+
+# Motywacja z tabeli (docs/04, 4.4.3). Format Ekstraklasy: 2013/14–2019/20 system ESA-37 (16 drużyn,
+# 30 kolejek, podział tabeli i połowienie punktów, razem 37 kolejek), 2020/21 – 30 kolejek, od 2021/22
+# 18 drużyn i 34 kolejki. Podział na grupy po 30. kolejce przybliżamy jedną tabelą.
+ESA_SEASONS = {"2013/14", "2014/15", "2015/16", "2016/17", "2017/18", "2018/19", "2019/20"}
+RELEGATED = {"2019/20": 3, "2020/21": 1}       # pozostałe sezony: 16 drużyn – 2 spadki, 18 drużyn – 3
+EURO_PLACES = 3                                 # miejsca premiowane grą w pucharach (bez zdobywcy Pucharu Polski)
+PRESSURE_ROUNDS = 12                            # presja liczona w ostatnich 12 kolejkach, wcześniej 0
+NOTHING_ROUNDS = 5
 PI_PARAMS = {"lam": pi.LAMBDA, "gamma": pi.GAMMA}
 
 NEUTRAL_LINEUP = {"att": 1.0, "reg": 1.0, "gk_backup": 0.0}
@@ -88,6 +98,26 @@ def lineup_strength(history: list[list], starters: set[int], pos_rate: dict[str,
     }
 
 
+def season_rounds(season: str, n_teams: int) -> int:
+    if n_teams >= 18:
+        return 34
+    return 37 if season in ESA_SEASONS else 30
+
+
+def motivation(points: dict[str, float], team: str, rounds_left: int, n_relegated: int) -> dict[str, float]:
+    """Presja spadkowa i pucharowa oraz „nic do grania” z tabeli przed meczem (docs/04, 4.4.3)."""
+    if rounds_left <= 0 or rounds_left > PRESSURE_ROUNDS or len(points) <= n_relegated + EURO_PLACES:
+        return {"releg_pressure": 0.0, "euro_pressure": 0.0, "nothing_to_play": 0.0}
+    table = sorted(points.values(), reverse=True)
+    reachable = 3 * rounds_left
+    above_drop = points[team] - table[len(table) - n_relegated]      # punkty nad najwyższą drużyną w strefie spadkowej
+    to_euro = table[EURO_PLACES - 1] - points[team]                  # strata do ostatniego miejsca pucharowego
+    releg = min(1.0, max(0.0, 1 - above_drop / reachable))
+    euro = min(1.0, max(0.0, 1 - to_euro / reachable))
+    nothing = float(rounds_left <= NOTHING_ROUNDS and above_drop > reachable and to_euro > reachable)
+    return {"releg_pressure": releg, "euro_pressure": euro, "nothing_to_play": nothing}
+
+
 def build(conn: sqlite3.Connection) -> dict[int, dict[str, dict[str, float]]]:
     """Cechy wszystkich rozegranych meczów: {mecz: {'home': {...}, 'away': {...}}}."""
     matches, lineups = load(conn)
@@ -101,9 +131,21 @@ def build(conn: sqlite3.Connection) -> dict[int, dict[str, dict[str, float]]]:
     decay = 0.5 ** (1 / FORM_HALF_LIFE)
     elo_r = elo.pre_match(matches, **ELO_PARAMS)
     pi_r = pi.pre_match(matches, **PI_PARAMS)
+    teams_in: dict[str, set] = defaultdict(set)
+    for _, season, _, h, a, *_ in matches:
+        teams_in[season] |= {h, a}
+    for (season,) in conn.execute("SELECT DISTINCT season FROM match"):   # bieżący sezon: także mecze zaplanowane
+        teams_in[season] |= {t for row in conn.execute(
+            "SELECT home_id, away_id FROM match WHERE season = ?", (season,)) for t in row}
+    points: dict[str, dict[str, float]] = defaultdict(dict)
+    played: dict[str, dict[str, int]] = defaultdict(dict)
     out = {}
 
-    for match_id, _, kickoff, home, away, hg, ag in matches:
+    for match_id, season, kickoff, home, away, hg, ag in matches:
+        n_teams = len(teams_in[season])
+        total = season_rounds(season, n_teams)
+        n_relegated = RELEGATED.get(season, 3 if n_teams >= 18 else 2)
+        table = {t: points[season].get(t, 0.0) for t in teams_in[season]}
         pos_rate = {p: pos_goals[p] / (pos_minutes[p] / 90) for p in pos_minutes if pos_minutes[p] > 0}
         feats = {}
         for side, team, opp in (("home", home, away), ("away", away, home)):
@@ -118,6 +160,7 @@ def build(conn: sqlite3.Connection) -> dict[int, dict[str, dict[str, float]]]:
                 "att_prev": prev["att"], "reg_prev": prev["reg"], "gk_backup_prev": prev["gk_backup"],
                 "form_gf": form_gf.get(team, 1.3), "form_ga": form_ga.get(team, 1.3),
                 "rest_days": rest, "n_history": len(recent),
+                **motivation(table, team, total - played[season].get(team, 0), n_relegated),
             }
         hh, ha, ah, aa = pi_r[match_id]
         feats["home"].update(elo=elo_r[match_id][0], pi_g=pi.expected_goal_diff(hh))   # gospodarz: rating u siebie
@@ -126,6 +169,11 @@ def build(conn: sqlite3.Connection) -> dict[int, dict[str, dict[str, float]]]:
 
         # stan po meczu
         for team, gf, ga in ((home, hg, ag), (away, ag, hg)):
+            pts = points[season].get(team, 0.0) + (3 if gf > ga else 1 if gf == ga else 0)
+            played[season][team] = played[season].get(team, 0) + 1
+            if season in ESA_SEASONS and played[season][team] == 30:
+                pts = math.ceil(pts / 2)                 # ESA-37: połowienie punktów po rundzie zasadniczej
+            points[season][team] = pts
             form_gf[team] = decay * form_gf.get(team, gf) + (1 - decay) * gf
             form_ga[team] = decay * form_ga.get(team, ga) + (1 - decay) * ga
             last_kickoff[team] = kickoff
