@@ -32,3 +32,12 @@ def test_unknown_team_raises_with_suggestions():
 
 def test_normalize_strips_polish_characters():
     assert teams.normalize("Śląsk Wrocław") == "slask wroclaw"
+
+
+@pytest.mark.parametrize("short, team_id", [
+    ("Lech", "lech"), ("Lechia", "lechia"), ("Pogoń", "pogon"), ("Górnik", "gornik-zabrze"), ("Korona", "korona"),
+    ("Motor", "motor"), ("Piast", "piast"), ("Wieczysta", "wieczysta"), ("Płock", "wisla-plock"),
+    ("Wisła", "wisla-krakow"), ("GieKSa", "gks-katowice"), ("Zagłębie", "zaglebie-lubin"),
+])
+def test_short_names_used_in_chat(short, team_id):
+    assert teams.resolve(short) == team_id
