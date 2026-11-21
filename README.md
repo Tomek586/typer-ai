@@ -4,7 +4,7 @@
 
 Projekt zaliczeniowy z przedmiotu *Przetwarzanie języka naturalnego (NLP) i modele generatywne*.
 
-**Zespół:** [Imię Nazwisko], [Imię Nazwisko]
+**Zespół:** Tomasz Dziedzic, Adam Nowak
 
 ---
 
