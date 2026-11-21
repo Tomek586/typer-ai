@@ -102,8 +102,8 @@ def page_chat() -> None:
 
     with st.sidebar:
         st.markdown(f"**Model:** `{st.session_state.chat.model}`")
-        st.caption("Przy limicie (429), niedostępności (404) lub przekroczeniu 60 s czat przechodzi na kolejny model "
-                   "z zachowaniem historii.")
+        st.caption(f"Przy limicie (429), przeciążeniu (5xx), niedostępności (404) lub przekroczeniu {cli.TIMEOUT_S} s "
+                   "czat przechodzi na kolejny model z zachowaniem historii.")
         if st.button("Nowa rozmowa"):
             for key in ("chat", "messages"):
                 st.session_state.pop(key, None)
