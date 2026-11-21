@@ -1,0 +1,202 @@
+{
+ "2023/24": {
+  "market_1x2": 1.0613042323731339,
+  "n": 306,
+  "variants": {
+   "v1 (Dixon-Coles)": {
+    "alpha": 0.0,
+    "log_loss_1x2": 1.0627322978564797,
+    "log_loss_ou25": 0.6913167620887745,
+    "blend_prod_w": 1.0592256220168443,
+    "best_w": 0.45,
+    "blend_best": 1.0574816046771782,
+    "beta": {}
+   },
+   "+ forma": {
+    "alpha": 100.0,
+    "log_loss_1x2": 1.0591389194277332,
+    "log_loss_ou25": 0.6895101747342918,
+    "blend_prod_w": 1.058727125112268,
+    "best_w": 0.55,
+    "blend_best": 1.0556770851625046,
+    "beta": {
+     "form_gf_own": -0.043168294548603645,
+     "form_ga_opp": -0.04163567513444812
+    }
+   },
+   "+ odpoczynek": {
+    "alpha": 1000.0,
+    "log_loss_1x2": 1.0624491596950207,
+    "log_loss_ou25": 0.691166822696071,
+    "blend_prod_w": 1.0591866313504994,
+    "best_w": 0.45,
+    "blend_best": 1.057363467731599,
+    "beta": {
+     "rest_diff": 0.012834044379106818
+    }
+   },
+   "+ skład z poprzedniego meczu": {
+    "alpha": 1.0,
+    "log_loss_1x2": 1.0610062897670232,
+    "log_loss_ou25": 0.6896630331312538,
+    "blend_prod_w": 1.0589286145330765,
+    "best_w": 0.5,
+    "blend_best": 1.0565672684861516,
+    "beta": {
+     "att_prev_own": -0.016013565053999625,
+     "reg_prev_own": 0.026457779184503913,
+     "reg_prev_opp": 0.0242586469521386,
+     "gk_backup_prev_opp": 0.008952109167395065
+    }
+   },
+   "+ forma, odpoczynek, skład poprzedni (realny v2)": {
+    "alpha": 1.0,
+    "log_loss_1x2": 1.0574750658410341,
+    "log_loss_ou25": 0.6875475964575383,
+    "blend_prod_w": 1.0584555357528247,
+    "best_w": 0.6,
+    "blend_best": 1.0546585903857681,
+    "beta": {
+     "form_gf_own": -0.04630885555602714,
+     "form_ga_opp": -0.041712288736875755,
+     "rest_diff": 0.01683569912047533,
+     "att_prev_own": -0.013375489906547305,
+     "reg_prev_own": 0.028595318418178237,
+     "reg_prev_opp": 0.02104359561812962,
+     "gk_backup_prev_opp": 0.012726364819460793
+    }
+   },
+   "+ skład oficjalny (górna granica)": {
+    "alpha": 1000.0,
+    "log_loss_1x2": 1.064932230106584,
+    "log_loss_ou25": 0.6948250566784399,
+    "blend_prod_w": 1.0595684487260026,
+    "best_w": 0.4,
+    "blend_best": 1.0584533611578784,
+    "beta": {
+     "att_off_own": 0.010745804901003204,
+     "reg_off_own": 0.03473998738570508,
+     "reg_off_opp": 0.009597546644230702,
+     "gk_backup_off_opp": -0.0016944719002415954
+    }
+   },
+   "+ forma, odpoczynek, skład oficjalny": {
+    "alpha": 1.0,
+    "log_loss_1x2": 1.0603437098612334,
+    "log_loss_ou25": 0.6931613505348987,
+    "blend_prod_w": 1.058919369835501,
+    "best_w": 0.55,
+    "blend_best": 1.0563672232525223,
+    "beta": {
+     "form_gf_own": -0.048439082294295756,
+     "form_ga_opp": -0.0414149281681308,
+     "rest_diff": 0.017349502067693645,
+     "att_off_own": 0.009706210126343906,
+     "reg_off_own": 0.05183189499995043,
+     "reg_off_opp": 0.005709505494931929,
+     "gk_backup_off_opp": 0.001820907328927053
+    }
+   }
+  }
+ },
+ "2024/25": {
+  "market_1x2": 1.0203765335470116,
+  "n": 306,
+  "variants": {
+   "v1 (Dixon-Coles)": {
+    "alpha": 0.0,
+    "log_loss_1x2": 1.041383408798535,
+    "log_loss_ou25": 0.6993687815748715,
+    "blend_prod_w": 1.021969577010849,
+    "best_w": 0.0,
+    "blend_best": 1.0203765335470116,
+    "beta": {}
+   },
+   "+ forma": {
+    "alpha": 1000.0,
+    "log_loss_1x2": 1.0399667971621402,
+    "log_loss_ou25": 0.6997482519379624,
+    "blend_prod_w": 1.0214297457070718,
+    "best_w": 0.0,
+    "blend_best": 1.0203765335470116,
+    "beta": {
+     "form_gf_own": -0.03176231338871845,
+     "form_ga_opp": -0.03631715927627695
+    }
+   },
+   "+ odpoczynek": {
+    "alpha": 1000.0,
+    "log_loss_1x2": 1.04211882037159,
+    "log_loss_ou25": 0.6991810856344643,
+    "blend_prod_w": 1.0220431074277467,
+    "best_w": 0.0,
+    "blend_best": 1.0203765335470116,
+    "beta": {
+     "rest_diff": 0.008642187630233061
+    }
+   },
+   "+ skład z poprzedniego meczu": {
+    "alpha": 1.0,
+    "log_loss_1x2": 1.0404876848550175,
+    "log_loss_ou25": 0.6986176618012275,
+    "blend_prod_w": 1.021791886805442,
+    "best_w": 0.0,
+    "blend_best": 1.0203765335470116,
+    "beta": {
+     "att_prev_own": -0.0213904955155533,
+     "reg_prev_own": 0.02759899200441907,
+     "reg_prev_opp": 0.028448051438660357,
+     "gk_backup_prev_opp": 0.011637119622514888
+    }
+   },
+   "+ forma, odpoczynek, skład poprzedni (realny v2)": {
+    "alpha": 1000.0,
+    "log_loss_1x2": 1.0404275520597126,
+    "log_loss_ou25": 0.6991085122919788,
+    "blend_prod_w": 1.0214300457009626,
+    "best_w": 0.0,
+    "blend_best": 1.0203765335470116,
+    "beta": {
+     "form_gf_own": -0.0326894731844912,
+     "form_ga_opp": -0.03550616407002888,
+     "rest_diff": 0.0087747512567687,
+     "att_prev_own": -0.011113504017880136,
+     "reg_prev_own": 0.01969296637435876,
+     "reg_prev_opp": 0.01777941696807463,
+     "gk_backup_prev_opp": 0.008758112365683461
+    }
+   },
+   "+ skład oficjalny (górna granica)": {
+    "alpha": 1000.0,
+    "log_loss_1x2": 1.0420776731006505,
+    "log_loss_ou25": 0.6986392702557777,
+    "blend_prod_w": 1.0219904439236343,
+    "best_w": 0.0,
+    "blend_best": 1.0203765335470116,
+    "beta": {
+     "att_off_own": 0.006722013380911117,
+     "reg_off_own": 0.03691805486523042,
+     "reg_off_opp": 0.005967346242180639,
+     "gk_backup_off_opp": 0.004271765538056927
+    }
+   },
+   "+ forma, odpoczynek, skład oficjalny": {
+    "alpha": 1000.0,
+    "log_loss_1x2": 1.0416202973896518,
+    "log_loss_ou25": 0.6989820616896346,
+    "blend_prod_w": 1.0215259544418434,
+    "best_w": 0.0,
+    "blend_best": 1.0203765335470116,
+    "beta": {
+     "form_gf_own": -0.0343346154946969,
+     "form_ga_opp": -0.03612938694277078,
+     "rest_diff": 0.009147118981614777,
+     "att_off_own": 0.008409820955283689,
+     "reg_off_own": 0.03818924407828938,
+     "reg_off_opp": 0.002531750419980254,
+     "gk_backup_off_opp": 0.006573324341880372
+    }
+   }
+  }
+ }
+}

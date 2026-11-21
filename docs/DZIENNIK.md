@@ -8,7 +8,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
 - [ ] Komputer domowy: ustawić „Uśpij po” = Nigdy przy zasilaniu z sieci (21.11 było 30 min), inaczej etapy przed meczami przepadną.
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
-- [ ] Model v2: siła składu, forma, H2H, derby, motywacja, zmęczenie; każda cecha zostaje tylko, jeśli poprawia backtest.
+- [ ] Model v2: krok 1 zrobiony 21.11 (forma, odpoczynek, siła składu – mały zysk, wpis niżej). Dalej: diagnoza cech składu oficjalnego, ratingi Elo/pi, motywacja z tabeli, derby; każda cecha zostaje tylko, jeśli poprawia backtest.
 - [ ] Newsy: wykrywanie kontuzji i zawieszeń (Jev lub LLM), przewidywany skład.
 - [ ] RAG, ocena NLP; aplikacja: strony „Mecz”, „Newsy”, „Decyzje Jev”, „System” (Czat, Typy, Wyniki gotowe 21.11).
 - [ ] Jakość odpowiedzi modeli „lite” vs `3.5-flash` (od 21.11 domyślnie „lite”): porównać na zbiorze pytań testowych przy ewaluacji NLP.
@@ -17,6 +17,10 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-21
 
+- **Model v2, krok 1 (`evaluation/validate_v2.py`):** λ-GLM z offsetem log λ Dixona-Colesa, uczony na sezonach 2016/17 – S−1 (λ DC spoza próby, walk-forward co tydzień). Cechy liczone tylko z wcześniejszych meczów (`typerai/model/features.py`): forma goli (półokres 8 meczów), różnica dni odpoczynku (tylko liga – pucharów nie mamy w bazie), siła składu w dwóch wariantach: skład z poprzedniego meczu (dostępny w etapie 1) i skład oficjalny (górna granica, znany tuż przed meczem).
+  - Log-loss 1X2, v1 → realny v2 (forma + odpoczynek + skład poprzedni): **2023/24 1,0627 → 1,0575** (rynek 1,0613), **2024/25 1,0414 → 1,0404** (rynek 1,0204). Po zmieszaniu z rynkiem (w = 0,15): 1,0592 → 1,0585 i 1,0220 → 1,0214. Zysk mały i nierówny między sezonami; większość daje forma, i to z ujemnym współczynnikiem (powrót do średniej po serii goli).
+  - **Skład oficjalny nie pomógł** (1,0649 i 1,0421), choć w danych widać związek: drużyny z najwyższym `reg_off` (grają podstawowi) strzelają 18% ponad λ DC, z najniższym 2%. Do diagnozy przed kolejnymi cechami (definicja składu referencyjnego, okno 10 meczów, przekroje sezonów).
+  - Alpha wybierana na sezonie walidacyjnym (zgodnie z docs/04, 4.10) – wyniki są więc lekko optymistyczne. Sezon testowy 2025/26 nieużyty. v2 **nie** jest jeszcze w produkcji.
 - **Nowa kolejność modeli Gemini i limit 30 s.** Pomiar 21.11 (jedno krótkie zapytanie na model): `3.5-flash` 503 po 36 s (wcześniej 504 po 60 s), `3.7/3.6/3.8-flash` 503 po 2–8 s, działały tylko `3.5-flash-lite` (0,5 s) i `3.1-flash-lite` (2,9 s). Kolejność: `3.5-flash-lite` → `3.1-flash-lite` → `3.5-flash` → większe modele; limit czasu 60 → 30 s (`GEMINI_TIMEOUT_S`). Analiza meczu w czacie: 3,3 s zamiast ok. 68 s. Modele „lite” poprawnie wywołują narzędzia, a zmyślone liczby wyłapuje kontrola G5; jakość porównamy w ewaluacji.
 - **Aplikacja Streamlit, pierwsza wersja:** Czat (z panelem „Jak powstała odpowiedź”), Typy (z tabelą „dlaczego jest albo nie ma typu”), Wyniki. Baza otwierana tylko do odczytu (`typerai/report.py`), więc aplikacja działa też na kopii na laptopie. Zależności w osobnych grupach `[app]` i `[notebook]`, żeby harmonogram ich nie wymagał.
 - **Notebook na zajęcia 22.11** (`notebooks/postep_po_PoC.ipynb`): walidacja walk-forward liczona na żywo (ok. 45 s) zamiast „epok”, bo model v1 nie ma treningu iteracyjnego; symulacja reguł odtwarza liczby z analizy progu EV (8 → 22,5 typu/sezon). Zapisany z wynikami, żeby dało się go pokazać bez bazy.
