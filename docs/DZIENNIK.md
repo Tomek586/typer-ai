@@ -6,7 +6,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 - [ ] Imiona i nazwiska zespołu w README, prezentacji i dokumentacji (teraz `[Imię Nazwisko]`).
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
-- [ ] Przeniesienie harmonogramu na komputer domowy ([instrukcja](harmonogram-komputer-domowy.md)): część 1 zrobiona 21.11 (harmonogram usunięty z laptopa, kopia bazy `data/typer_kopia.db`); **do czasu uruchomienia w domu typy nie są zbierane**.
+- [ ] Komputer domowy: ustawić „Uśpij po” = Nigdy przy zasilaniu z sieci (21.11 było 30 min), inaczej etapy przed meczami przepadną.
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
 - [ ] Model v2: siła składu, forma, H2H, derby, motywacja, zmęczenie; każda cecha zostaje tylko, jeśli poprawia backtest.
 - [ ] Newsy: wykrywanie kontuzji i zawieszeń (Jev lub LLM), przewidywany skład.
@@ -16,6 +16,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-21
 
+- **Harmonogram działa na komputerze domowym** (zadanie `TyperAI_Scheduler`, start 12:20). Testy: 104 przeszło. Po starcie nadrobił etap 1 (ok) i rozliczenie; pierwsze 2 typy strategii „cień”, oficjalnych 0. Od teraz `data/typer.db` na tym komputerze jest bazą główną.
 - **Analiza braku typów (8–21.11):** trzy przyczyny.
   1. Laptop spał: etap 1 wykonał się **raz** zamiast ok. 26 razy; etap 2 316 razy, czyli laptop działał ok. 53 h w 13 dni.
   2. Przerwa na reprezentację: brak meczów Ekstraklasy 9–19.11.
