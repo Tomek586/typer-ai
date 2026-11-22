@@ -4,6 +4,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## Otwarte sprawy
 
+- [ ] **Poprawki przepływu danych (przegląd 22.11, wpis niżej) – zacząć na komputerze domowym.** Najpierw punkty 1 i 2 (ok. 1 h), potem 3 i 4. Przy punkcie 2 ustalić folder kopii (np. OneDrive).
 - [ ] Uczenie maszynowe (drugi przedmiot): plan w [rozdz. 13](13-uczenie-maszynowe.md) – klasyfikator newsów, model kartek, gradient boosting jako korektor rynku, kalibracja. Na razie tylko w dokumentacji; forma i termin zaliczenia ML do ustalenia.
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
@@ -17,6 +18,14 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-22
 
+- **Przegląd przepływu danych – co wymaga poprawy** (do zrobienia, kolejność według ważności):
+  1. **Wspólny limit Gemini dla newsów i czatu (ważne).** `LLMEngine` (`typerai/decision/engine.py`) używa tego samego klucza i łańcucha co czat (`cli.MODELS`). Zadanie `news` działa 8 razy dziennie po maks. 10 artykułów (`config.NEWS["max_classify_per_run"]`), czyli do 80 zapytań dziennie przy ok. 120 dla całego łańcucha. Czat (np. na zajęciach) może zostać bez limitu. **Poprawka:** dzienny budżet dla newsów (np. ok. 30 zapytań, liczony z `DECISION_LOG`), pierwszeństwo dla czatu. Docelowo limit odciąży własny klasyfikator (rozdz. 13.3.1).
+  2. **Brak kopii zapasowej bazy (ważne).** Cała historia jest w jednym pliku `data/typer.db` na komputerze domowym; kursów historycznych The Odds API nie da się pobrać ponownie w darmowym planie. **Poprawka:** codzienne zadanie w `typerai/scheduler.py` wywołujące `db.backup()` do folderu synchronizowanego z chmurą (do ustalenia, np. OneDrive). Laptop brałby kopię z tego folderu zamiast ręcznego przenoszenia.
+  3. **Awarie zbierania danych są niewidoczne (średnie).** Błędy są tylko w `JOB_RUN` i `data/scheduler.log`; uśpiony laptop zauważyliśmy po 13 dniach. **Poprawka:** codzienne podsumowanie stanu (ostatnie udane zadania, błędy, kredyty The Odds API, liczba typów) na stronie „System”, potem powiadomienie (Telegram).
+  4. **Nieprecyzyjna kadra do rozpoznawania zawodników w newsach (średnie).** `squad()` w `typerai/news/extract.py` bierze 35 zawodników z największą liczbą minut z 365 dni: nie zna nowych zawodników przed debiutem, a trzyma sprzedanych. **Poprawka:** krótsze okno (2–3 miesiące lub bieżący sezon) i dopisywanie zawodników z newsów kategorii „transfer”.
+  5. **Progi pewności nie działają przy Gemini (znane).** Prawdopodobieństwa prawie zawsze 0 albo 1; pola „pewność” nie traktujemy jako miary jakości, dopóki nie ma Jev lub własnego klasyfikatora.
+  - **Świadomie niedokończone:** newsy na razie nie wpływają na typy, tylko na czat. Jeśli mają wpływać, lepsza jest bramka (weto przy zmianie trenera, kryzysie) niż korekta liczb modelu (diagnoza składu z 21.11).
+  - **Sposób wdrożenia:** gałąź i pull request; na komputerze domowym po scaleniu `git pull` i ponowne uruchomienie zadania `TyperAI_Scheduler`.
 - **Projekt zalicza też przedmiot „Uczenie maszynowe”** (zgoda prowadzącego ML; rodzaj algorytmów dowolny). Decyzja: wybieramy elementy ML, które rozwiązują problemy aplikacji, a na razie **tylko je dokumentujemy** (rozdz. 13). Plan według korzyści: (1) własny klasyfikator newsów – TF-IDF / embeddingi + regresja logistyczna zamiast części zapytań do Gemini (limity, czas); (2) model kartek – regresja ujemna dwumianowa z sędzią; (3) gradient boosting jako korektor rynku 1X2, porównany z regresją logistyczną i rynkiem; (4) kalibracja Platta / izotoniczna. Wszystko z tym samym podziałem czasowym i oceną „każdy sezon po kolei”.
 
 ## 2026-11-21
