@@ -5,6 +5,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 ## Otwarte sprawy
 
 - [ ] **Poprawki przepływu danych (przegląd 22.11, wpis niżej) – zacząć na komputerze domowym.** Najpierw punkty 1 i 2 (ok. 1 h), potem 3 i 4. Przy punkcie 2 ustalić folder kopii (np. OneDrive).
+- [ ] **Mechanizmy mogące podnieść ROI (lista 22.11, wpis niżej) – decyzja w domu.** Proponowane na start: analizy wsteczne 1 (kursy wcześniejsze vs zamknięcia) i 2 (odchylenia rynku Ekstraklasy), oceniane przez CLV.
 - [ ] Uczenie maszynowe (drugi przedmiot): plan w [rozdz. 13](13-uczenie-maszynowe.md) – klasyfikator newsów, model kartek, gradient boosting jako korektor rynku, kalibracja. Na razie tylko w dokumentacji; forma i termin zaliczenia ML do ustalenia.
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
@@ -18,6 +19,14 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-22
 
+- **Mechanizmy, które mogą podnieść ROI (pomysły do decyzji, nic nie wdrożone).** Model na obecnych cechach nie pobija rynku, więc przewagi szukamy poza samym algorytmem:
+  1. **Moment zakładu (najbardziej obiecujące).** Rynek jest najbardziej efektywny tuż przed meczem, a etap 2 działa właśnie wtedy. Kursy z kilku dni wcześniej są „miększe”. **Do sprawdzenia za darmo:** `POL.csv` ma kursy wcześniejsze (zbierane kilka dni przed kolejką) i zamknięcia (kolumny z „C”); symulacja reguł na kursach wcześniejszych z oceną CLV względem zamknięcia. Jeśli wyjdzie dodatnio: większy nacisk na etap 1, etap 2 jako kontrola.
+  2. **Systematyczne odchylenia rynku Ekstraklasy** (efekt faworyt–outsider, remisy, przewaga gospodarzy). Do sprawdzenia na ok. 3900 meczach z kursami Pinnacle, ocena „każdy sezon po kolei”; zostaje tylko efekt stabilny w większości sezonów. Łączy się z korektorem rynku (rozdz. 13.3.3).
+  3. **Rynki mniej efektywne niż 1X2** (kartki z sędzią, rożne). Brak historycznych kursów na kartki, więc przewagę da się sprawdzić tylko w teście na żywo (kurs minimalny).
+  4. **Szybsza reakcja na newsy o składzie** (część bukmacherów reaguje wolniej niż Pinnacle). Efekt mały (diagnoza składu z 21.11) i kosztowny w kredytach The Odds API.
+  - **Nie podniosą ROI:** stawkowanie Kelly'ego (zmienia ryzyko, nie znak przewagi), kupony (marża się mnoży), giełdy typu Betfair (niższa marża, ale nielegalne w Polsce, więc wynik byłby nierealny), mocniejszy model na tych samych cechach.
+  - **Miara:** przy ok. 22 typach na sezon ROI to głównie szum, dlatego każdy pomysł oceniamy najpierw przez **CLV** (kurs typu vs kurs zamknięcia).
+  - **Propozycja:** zacząć od 1 i 2 (analizy wsteczne, ok. 1–2 h każda, tylko odczyt bazy, więc można je robić na dowolnym komputerze). Decyzja: Tomasz, na komputerze domowym.
 - **Przegląd przepływu danych – co wymaga poprawy** (do zrobienia, kolejność według ważności):
   1. **Wspólny limit Gemini dla newsów i czatu (ważne).** `LLMEngine` (`typerai/decision/engine.py`) używa tego samego klucza i łańcucha co czat (`cli.MODELS`). Zadanie `news` działa 8 razy dziennie po maks. 10 artykułów (`config.NEWS["max_classify_per_run"]`), czyli do 80 zapytań dziennie przy ok. 120 dla całego łańcucha. Czat (np. na zajęciach) może zostać bez limitu. **Poprawka:** dzienny budżet dla newsów (np. ok. 30 zapytań, liczony z `DECISION_LOG`), pierwszeństwo dla czatu. Docelowo limit odciąży własny klasyfikator (rozdz. 13.3.1).
   2. **Brak kopii zapasowej bazy (ważne).** Cała historia jest w jednym pliku `data/typer.db` na komputerze domowym; kursów historycznych The Odds API nie da się pobrać ponownie w darmowym planie. **Poprawka:** codzienne zadanie w `typerai/scheduler.py` wywołujące `db.backup()` do folderu synchronizowanego z chmurą (do ustalenia, np. OneDrive). Laptop brałby kopię z tego folderu zamiast ręcznego przenoszenia.
