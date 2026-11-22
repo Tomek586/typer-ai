@@ -4,6 +4,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## Otwarte sprawy
 
+- [ ] **Priorytety projektu (analiza 22.11, wpis niżej) – przejrzeć i zatwierdzić w domu.** Kolejność: (1) od razu – kopia bazy, budżet Gemini, konto Jev; (2) do przerwy zimowej – RAG, zbiory testowe NLP (z Adamem), monitoring; (3) w przerwie – ewaluacja NLP, ML, analizy ROI, raport.
 - [ ] **Poprawki przepływu danych (przegląd 22.11, wpis niżej) – zacząć na komputerze domowym.** Najpierw punkty 1 i 2 (ok. 1 h), potem 3 i 4. Przy punkcie 2 ustalić folder kopii (np. OneDrive).
 - [ ] **Mechanizmy mogące podnieść ROI (lista 22.11, wpis niżej) – decyzja w domu.** Proponowane na start: analizy wsteczne 1 (kursy wcześniejsze vs zamknięcia) i 2 (odchylenia rynku Ekstraklasy), oceniane przez CLV.
 - [ ] Uczenie maszynowe (drugi przedmiot): plan w [rozdz. 13](13-uczenie-maszynowe.md) – klasyfikator newsów, model kartek, gradient boosting jako korektor rynku, kalibracja. Na razie tylko w dokumentacji; forma i termin zaliczenia ML do ustalenia.
@@ -19,6 +20,18 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## 2026-11-22
 
+- **Analiza: co da największy zysk dla sukcesu projektu** (do zatwierdzenia w domu). Kryteria: zaliczenie NLP (główny przedmiot), zaliczenie ML, cel ilościowy.
+  - **Najważniejsze ryzyko:** tytuł projektu obiecuje **RAG i model decyzyjny Jev**, a w kodzie nie ma modułu RAG ani ChromaDB, a Jev nie ma klucza (działa tylko plan B na Gemini). Prowadzący oceni projekt według obietnic z tytułu.
+  - **Ranking:**
+    1. **RAG** (1–2 dni): regulaminy bukmacherów (scenariusz demo „mecz przerwany”), słownik pojęć, artykuły z newsów; wyszukiwanie hybrydowe BM25 + embeddingi `mmlw`, cytat źródła w odpowiedzi czatu.
+    2. **Jev** (1 h na start): konto zakłada Tomasz. Jeśli Jev jest niedostępny lub słaby, opisać to w dokumentacji i porównać z `LLMEngine`.
+    3. **Zbiory testowe NLP** (2–3 dni, dwie osoby): 70 pytań do czatu, przykłady do guardrails, 150 oznaczonych artykułów. Te same etykiety posłużą klasyfikatorowi ML (rozdz. 13.3.1). Zacząć od razu.
+    4. **Ciągłość testu na żywo** (ok. 3 h): kopia bazy i monitoring (przegląd przepływu danych niżej). Przerwa zimowa zwykle od połowy grudnia, więc zostało ok. 3–4 tygodni meczów. Sprawdzić, czy raport pokazuje CLV.
+    5. **Analizy ROI** (2–4 h): moment zakładu i odchylenia rynku (wpis niżej); wynik negatywny też jest wartościowy.
+    6. **Elementy demo** (1–2 dni): strony „System” i „Mecz”, powiadomienia Telegram.
+    7. **ML** (1–2 dni na element): klasyfikator newsów, potem model kartek.
+  - **Teraz nie robić:** kolejnych cech modelu goli (nie biją rynku), kilku dostawców LLM (Groq, Bielik – wystarczy porównanie „lite” vs 3.5-flash), pełnego przewidywanego składu z newsów (mały wpływ).
+  - **Cel ilościowy:** trafność > 50% realna; ROI > 0 mało prawdopodobne i statystycznie nierozstrzygalne przy ok. 20–30 typach przed przerwą. Sukces = działający system z rzetelną ewaluacją, uczciwie pokazujący, gdzie jest przewaga, a gdzie jej nie ma (zgodnie z ryzykami w rozdz. 11.3).
 - **Mechanizmy, które mogą podnieść ROI (pomysły do decyzji, nic nie wdrożone).** Model na obecnych cechach nie pobija rynku, więc przewagi szukamy poza samym algorytmem:
   1. **Moment zakładu (najbardziej obiecujące).** Rynek jest najbardziej efektywny tuż przed meczem, a etap 2 działa właśnie wtedy. Kursy z kilku dni wcześniej są „miększe”. **Do sprawdzenia za darmo:** `POL.csv` ma kursy wcześniejsze (zbierane kilka dni przed kolejką) i zamknięcia (kolumny z „C”); symulacja reguł na kursach wcześniejszych z oceną CLV względem zamknięcia. Jeśli wyjdzie dodatnio: większy nacisk na etap 1, etap 2 jako kontrola.
   2. **Systematyczne odchylenia rynku Ekstraklasy** (efekt faworyt–outsider, remisy, przewaga gospodarzy). Do sprawdzenia na ok. 3900 meczach z kursami Pinnacle, ocena „każdy sezon po kolei”; zostaje tylko efekt stabilny w większości sezonów. Łączy się z korektorem rynku (rozdz. 13.3.3).
