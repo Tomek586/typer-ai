@@ -4,6 +4,7 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## Otwarte sprawy
 
+- [ ] Uczenie maszynowe (drugi przedmiot): plan w [rozdz. 13](13-uczenie-maszynowe.md) – klasyfikator newsów, model kartek, gradient boosting jako korektor rynku, kalibracja. Na razie tylko w dokumentacji; forma i termin zaliczenia ML do ustalenia.
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
 - [ ] Model v2: krok 1 i diagnoza składu zrobione 21.11 (wpisy niżej). Ratingi Elo/pi i motywacja sprawdzone 21.11 (bez zysku); stabilny zysk daje tylko forma. Do decyzji: czy wdrożyć v1 + forma w trakcie testu na żywo. Niesprawdzone: derby (brak listy par w repozytorium), puchary (brak terminarza pucharów); każda cecha oceniana „każdy sezon po kolei” (9 sezonów) i zostaje tylko, jeśli poprawia wynik.
@@ -13,6 +14,10 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 - [ ] Jakość odpowiedzi modeli „lite” vs `3.5-flash` (od 21.11 domyślnie „lite”): porównać na zbiorze pytań testowych przy ewaluacji NLP.
 
 ---
+
+## 2026-11-22
+
+- **Projekt zalicza też przedmiot „Uczenie maszynowe”** (zgoda prowadzącego ML; rodzaj algorytmów dowolny). Decyzja: wybieramy elementy ML, które rozwiązują problemy aplikacji, a na razie **tylko je dokumentujemy** (rozdz. 13). Plan według korzyści: (1) własny klasyfikator newsów – TF-IDF / embeddingi + regresja logistyczna zamiast części zapytań do Gemini (limity, czas); (2) model kartek – regresja ujemna dwumianowa z sędzią; (3) gradient boosting jako korektor rynku 1X2, porównany z regresją logistyczną i rynkiem; (4) kalibracja Platta / izotoniczna. Wszystko z tym samym podziałem czasowym i oceną „każdy sezon po kolei”.
 
 ## 2026-11-21
 

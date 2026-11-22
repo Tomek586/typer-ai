@@ -49,6 +49,7 @@ Szczegóły: [rozdz. 1.6](docs/01-koncepcja.md#16-definicja-sukcesu-dlaczego-tra
 | 10 | [Ewaluacja](docs/10-ewaluacja.md) | backtest, test na żywo, metryki, istotność, ablacje, ocena Jev i NLP |
 | 11 | [Plan prac](docs/11-plan-prac.md) | etapy, podział zadań, ryzyka, scenariusz demo |
 | 12 | [Słownik](docs/12-slownik.md) | pojęcia bukmacherskie, statystyczne i NLP |
+| 13 | [Uczenie maszynowe](docs/13-uczenie-maszynowe.md) | elementy ML (zrobione i zaplanowane) – projekt zalicza też przedmiot z ML |
 
 **Współpraca:** [CONTRIBUTING.md](CONTRIBUTING.md) (przygotowanie komputera, role komputerów, codzienna praca) · [docs/DZIENNIK.md](docs/DZIENNIK.md) (dziennik decyzji) · [przeniesienie harmonogramu na komputer domowy](docs/harmonogram-komputer-domowy.md)
 
