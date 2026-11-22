@@ -15,6 +15,7 @@ Termin oddania nie jest jeszcze znany, więc etapy opisane są w tygodniach od s
 | **6. Chatbot** | 4–6 | `LLMClient` (Gemini, Groq, Bielik), narzędzia, pętla agenta, router Jev, RAG (hybryda + reranking), guardrails, prompty | chatbot odpowiada na 70 pytań testowych |
 | **7. Interfejsy** | 5–7 | Streamlit (wszystkie strony), pełny bot Telegram | demo gotowe |
 | **8. Ewaluacja NLP** | 6–7 | zbiory: intencje (200), guardrails (200), RAG (40), pytania (70); uruchomienie B.1–B.5, C.1–C.4 | tabele wyników |
+| **8a. Uczenie maszynowe** | po etapie 8 | klasyfikator newsów (TF-IDF / embeddingi vs LLM), model kartek, gradient boosting jako korektor rynku, kalibracja – szczegóły w rozdz. 13 | porównania algorytmów w `evaluation/reports/` |
 | **9. Raport i prezentacja** | 7–8 | podsumowanie testu na żywo, raport (rozdz. 10.D), slajdy, scenariusz demo | projekt oddany |
 
 **Zmiana wersji modelu w trakcie testu na żywo** (v1 → v2 w tygodniu 5) jest oznaczona w `model_version`. W raporcie oba okresy opisujemy osobno.

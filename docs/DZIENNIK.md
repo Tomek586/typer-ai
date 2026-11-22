@@ -4,6 +4,10 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 
 ## Otwarte sprawy
 
+- [ ] **Priorytety projektu (analiza 22.11, wpis niżej) – przejrzeć i zatwierdzić w domu.** Kolejność: (1) od razu – kopia bazy, budżet Gemini, konto Jev; (2) do przerwy zimowej – RAG, zbiory testowe NLP (z Adamem), monitoring; (3) w przerwie – ewaluacja NLP, ML, analizy ROI, raport.
+- [ ] **Poprawki przepływu danych (przegląd 22.11, wpis niżej) – zacząć na komputerze domowym.** Najpierw punkty 1 i 2 (ok. 1 h), potem 3 i 4. Przy punkcie 2 ustalić folder kopii (np. OneDrive).
+- [ ] **Mechanizmy mogące podnieść ROI (lista 22.11, wpis niżej) – decyzja w domu.** Proponowane na start: analizy wsteczne 1 (kursy wcześniejsze vs zamknięcia) i 2 (odchylenia rynku Ekstraklasy), oceniane przez CLV.
+- [ ] Uczenie maszynowe (drugi przedmiot): plan w [rozdz. 13](13-uczenie-maszynowe.md) – klasyfikator newsów, model kartek, gradient boosting jako korektor rynku, kalibracja. Na razie tylko w dokumentacji; forma i termin zaliczenia ML do ustalenia.
 - [ ] Klucz Jev (TypeSafe AI): konto nie jest jeszcze założone; bez niego część decyzyjna działa na planie B (LLM).
 - [ ] Model kartek: sędzia, drużyny, derby jako cecha do sprawdzenia; wynik z kursem minimalnym.
 - [ ] Model v2: krok 1 i diagnoza składu zrobione 21.11 (wpisy niżej). Ratingi Elo/pi i motywacja sprawdzone 21.11 (bez zysku); stabilny zysk daje tylko forma. Do decyzji: czy wdrożyć v1 + forma w trakcie testu na żywo. Niesprawdzone: derby (brak listy par w repozytorium), puchary (brak terminarza pucharów); każda cecha oceniana „każdy sezon po kolei” (9 sezonów) i zostaje tylko, jeśli poprawia wynik.
@@ -13,6 +17,38 @@ Wspólna pamięć projektu dla wszystkich osób i sesji Claude. Najnowsze wpisy 
 - [ ] Jakość odpowiedzi modeli „lite” vs `3.5-flash` (od 21.11 domyślnie „lite”): porównać na zbiorze pytań testowych przy ewaluacji NLP.
 
 ---
+
+## 2026-11-22
+
+- **Analiza: co da największy zysk dla sukcesu projektu** (do zatwierdzenia w domu). Kryteria: zaliczenie NLP (główny przedmiot), zaliczenie ML, cel ilościowy.
+  - **Najważniejsze ryzyko:** tytuł projektu obiecuje **RAG i model decyzyjny Jev**, a w kodzie nie ma modułu RAG ani ChromaDB, a Jev nie ma klucza (działa tylko plan B na Gemini). Prowadzący oceni projekt według obietnic z tytułu.
+  - **Ranking:**
+    1. **RAG** (1–2 dni): regulaminy bukmacherów (scenariusz demo „mecz przerwany”), słownik pojęć, artykuły z newsów; wyszukiwanie hybrydowe BM25 + embeddingi `mmlw`, cytat źródła w odpowiedzi czatu.
+    2. **Jev** (1 h na start): konto zakłada Tomasz. Jeśli Jev jest niedostępny lub słaby, opisać to w dokumentacji i porównać z `LLMEngine`.
+    3. **Zbiory testowe NLP** (2–3 dni, dwie osoby): 70 pytań do czatu, przykłady do guardrails, 150 oznaczonych artykułów. Te same etykiety posłużą klasyfikatorowi ML (rozdz. 13.3.1). Zacząć od razu.
+    4. **Ciągłość testu na żywo** (ok. 3 h): kopia bazy i monitoring (przegląd przepływu danych niżej). Przerwa zimowa zwykle od połowy grudnia, więc zostało ok. 3–4 tygodni meczów. Sprawdzić, czy raport pokazuje CLV.
+    5. **Analizy ROI** (2–4 h): moment zakładu i odchylenia rynku (wpis niżej); wynik negatywny też jest wartościowy.
+    6. **Elementy demo** (1–2 dni): strony „System” i „Mecz”, powiadomienia Telegram.
+    7. **ML** (1–2 dni na element): klasyfikator newsów, potem model kartek.
+  - **Teraz nie robić:** kolejnych cech modelu goli (nie biją rynku), kilku dostawców LLM (Groq, Bielik – wystarczy porównanie „lite” vs 3.5-flash), pełnego przewidywanego składu z newsów (mały wpływ).
+  - **Cel ilościowy:** trafność > 50% realna; ROI > 0 mało prawdopodobne i statystycznie nierozstrzygalne przy ok. 20–30 typach przed przerwą. Sukces = działający system z rzetelną ewaluacją, uczciwie pokazujący, gdzie jest przewaga, a gdzie jej nie ma (zgodnie z ryzykami w rozdz. 11.3).
+- **Mechanizmy, które mogą podnieść ROI (pomysły do decyzji, nic nie wdrożone).** Model na obecnych cechach nie pobija rynku, więc przewagi szukamy poza samym algorytmem:
+  1. **Moment zakładu (najbardziej obiecujące).** Rynek jest najbardziej efektywny tuż przed meczem, a etap 2 działa właśnie wtedy. Kursy z kilku dni wcześniej są „miększe”. **Do sprawdzenia za darmo:** `POL.csv` ma kursy wcześniejsze (zbierane kilka dni przed kolejką) i zamknięcia (kolumny z „C”); symulacja reguł na kursach wcześniejszych z oceną CLV względem zamknięcia. Jeśli wyjdzie dodatnio: większy nacisk na etap 1, etap 2 jako kontrola.
+  2. **Systematyczne odchylenia rynku Ekstraklasy** (efekt faworyt–outsider, remisy, przewaga gospodarzy). Do sprawdzenia na ok. 3900 meczach z kursami Pinnacle, ocena „każdy sezon po kolei”; zostaje tylko efekt stabilny w większości sezonów. Łączy się z korektorem rynku (rozdz. 13.3.3).
+  3. **Rynki mniej efektywne niż 1X2** (kartki z sędzią, rożne). Brak historycznych kursów na kartki, więc przewagę da się sprawdzić tylko w teście na żywo (kurs minimalny).
+  4. **Szybsza reakcja na newsy o składzie** (część bukmacherów reaguje wolniej niż Pinnacle). Efekt mały (diagnoza składu z 21.11) i kosztowny w kredytach The Odds API.
+  - **Nie podniosą ROI:** stawkowanie Kelly'ego (zmienia ryzyko, nie znak przewagi), kupony (marża się mnoży), giełdy typu Betfair (niższa marża, ale nielegalne w Polsce, więc wynik byłby nierealny), mocniejszy model na tych samych cechach.
+  - **Miara:** przy ok. 22 typach na sezon ROI to głównie szum, dlatego każdy pomysł oceniamy najpierw przez **CLV** (kurs typu vs kurs zamknięcia).
+  - **Propozycja:** zacząć od 1 i 2 (analizy wsteczne, ok. 1–2 h każda, tylko odczyt bazy, więc można je robić na dowolnym komputerze). Decyzja: Tomasz, na komputerze domowym.
+- **Przegląd przepływu danych – co wymaga poprawy** (do zrobienia, kolejność według ważności):
+  1. **Wspólny limit Gemini dla newsów i czatu (ważne).** `LLMEngine` (`typerai/decision/engine.py`) używa tego samego klucza i łańcucha co czat (`cli.MODELS`). Zadanie `news` działa 8 razy dziennie po maks. 10 artykułów (`config.NEWS["max_classify_per_run"]`), czyli do 80 zapytań dziennie przy ok. 120 dla całego łańcucha. Czat (np. na zajęciach) może zostać bez limitu. **Poprawka:** dzienny budżet dla newsów (np. ok. 30 zapytań, liczony z `DECISION_LOG`), pierwszeństwo dla czatu. Docelowo limit odciąży własny klasyfikator (rozdz. 13.3.1).
+  2. **Brak kopii zapasowej bazy (ważne).** Cała historia jest w jednym pliku `data/typer.db` na komputerze domowym; kursów historycznych The Odds API nie da się pobrać ponownie w darmowym planie. **Poprawka:** codzienne zadanie w `typerai/scheduler.py` wywołujące `db.backup()` do folderu synchronizowanego z chmurą (do ustalenia, np. OneDrive). Laptop brałby kopię z tego folderu zamiast ręcznego przenoszenia.
+  3. **Awarie zbierania danych są niewidoczne (średnie).** Błędy są tylko w `JOB_RUN` i `data/scheduler.log`; uśpiony laptop zauważyliśmy po 13 dniach. **Poprawka:** codzienne podsumowanie stanu (ostatnie udane zadania, błędy, kredyty The Odds API, liczba typów) na stronie „System”, potem powiadomienie (Telegram).
+  4. **Nieprecyzyjna kadra do rozpoznawania zawodników w newsach (średnie).** `squad()` w `typerai/news/extract.py` bierze 35 zawodników z największą liczbą minut z 365 dni: nie zna nowych zawodników przed debiutem, a trzyma sprzedanych. **Poprawka:** krótsze okno (2–3 miesiące lub bieżący sezon) i dopisywanie zawodników z newsów kategorii „transfer”.
+  5. **Progi pewności nie działają przy Gemini (znane).** Prawdopodobieństwa prawie zawsze 0 albo 1; pola „pewność” nie traktujemy jako miary jakości, dopóki nie ma Jev lub własnego klasyfikatora.
+  - **Świadomie niedokończone:** newsy na razie nie wpływają na typy, tylko na czat. Jeśli mają wpływać, lepsza jest bramka (weto przy zmianie trenera, kryzysie) niż korekta liczb modelu (diagnoza składu z 21.11).
+  - **Sposób wdrożenia:** gałąź i pull request; na komputerze domowym po scaleniu `git pull` i ponowne uruchomienie zadania `TyperAI_Scheduler`.
+- **Projekt zalicza też przedmiot „Uczenie maszynowe”** (zgoda prowadzącego ML; rodzaj algorytmów dowolny). Decyzja: wybieramy elementy ML, które rozwiązują problemy aplikacji, a na razie **tylko je dokumentujemy** (rozdz. 13). Plan według korzyści: (1) własny klasyfikator newsów – TF-IDF / embeddingi + regresja logistyczna zamiast części zapytań do Gemini (limity, czas); (2) model kartek – regresja ujemna dwumianowa z sędzią; (3) gradient boosting jako korektor rynku 1X2, porównany z regresją logistyczną i rynkiem; (4) kalibracja Platta / izotoniczna. Wszystko z tym samym podziałem czasowym i oceną „każdy sezon po kolei”.
 
 ## 2026-11-21
 
